@@ -41,9 +41,7 @@
   <!-- Apache ECharts CDN -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   
-  <!-- Mapbox GL JS CDN (Requerido por Deck.gl para modo mapa base) -->
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+
 
   <!-- Deck.gl Bundle CDN -->
   <script src="https://unpkg.com/deck.gl@8.9.0/dist.min.js"></script>
@@ -90,6 +88,63 @@
     .glow-orange { box-shadow: 0 0 15px rgba(249, 115, 22, 0.35); }
     .glow-green { box-shadow: 0 0 15px rgba(16, 185, 129, 0.35); }
     .glow-red { box-shadow: 0 0 15px rgba(239, 68, 68, 0.45); }
+
+    /* Tooltip personalizado de Deck.gl con Glassmorphic y Neón */
+    .deck-tooltip {
+      background: rgba(9, 14, 26, 0.9) !important;
+      backdrop-filter: blur(8px) !important;
+      border: 1px solid rgba(0, 240, 255, 0.25) !important;
+      border-radius: 8px !important;
+      padding: 12px !important;
+      color: #cbd5e1 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 240, 255, 0.1) !important;
+      font-size: 10px !important;
+      line-height: 1.5 !important;
+      z-index: 99999 !important;
+      pointer-events: none !important;
+    }
+
+    /* Tooltips persistentes DOM de distritos (sin glassmorphism, card oscura y elegante) */
+    .district-card-tooltip {
+      position: absolute;
+      transform: translate(-50%, -100%) translateY(-10px);
+      background: #090e1a !important; /* Card oscura y elegante */
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #cbd5e1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      line-height: 1.4;
+      pointer-events: none;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 12px rgba(0, 240, 255, 0.05);
+      z-index: 30;
+      transition: width 0.15s ease, height 0.15s ease, opacity 0.1s ease;
+      white-space: nowrap;
+    }
+    
+    .district-card-tooltip.critical {
+      border-color: rgba(189, 91, 255, 0.95) !important; /* Borde morado neón crítico */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(189, 91, 255, 0.25);
+    }
+    
+    .district-card-tooltip.warning {
+      border-color: rgba(249, 115, 22, 0.95) !important; /* Borde naranja aviso */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(249, 115, 22, 0.25);
+    }
+    
+    .district-card-tooltip.healthy {
+      border-color: rgba(16, 185, 129, 0.9) !important; /* Borde verde saludable */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .district-card-tooltip.expanded {
+      padding: 10px 14px;
+      z-index: 35;
+      white-space: normal;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.98), 0 0 20px rgba(0, 240, 255, 0.1);
+    }
 
     .custom-scrollbar::-webkit-scrollbar {
       width: 4px;
@@ -221,13 +276,11 @@
         </div>
         <div class="flex justify-between items-end mt-1">
           <div>
-            <p class="text-lg font-bold font-mono text-slate-100" id="val-agua">1.24M m³</p>
-            <p class="text-[9px] text-cyan-400 font-mono font-medium flex items-center gap-1 mt-0.5">
-              <span class="w-1 h-1 rounded-full bg-cyan-400 animate-ping"></span> 98.4% Eficiencia
-            </p>
-          </div>
-          <div class="text-right">
-            <span class="text-[9px] font-mono text-slate-500">Red sin fugas</span>
+            <p class="text-2xl font-bold font-mono text-slate-100" id="val-agua">1.24M m³</p>
+            <div id="badge-agua" class="px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_8px_rgba(0,200,255,0.15)] flex items-center gap-1.5 mt-1 w-fit">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" id="badge-agua-ping"></span>
+              <span id="val-agua-eff">98.4%</span> Eficiencia
+            </div>
           </div>
         </div>
       </div>
@@ -264,14 +317,23 @@
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </div>
         </div>
-        <div class="flex flex-col justify-end mt-1">
-          <div class="flex justify-between items-baseline mb-1">
+        <div class="flex justify-between items-end mt-1">
+          <div>
             <p class="text-2xl font-bold font-mono text-slate-100" id="val-residuos">42%</p>
-            <span class="text-[8.5px] font-mono text-slate-500">Llenado medio</span>
+            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Llenado medio</p>
           </div>
-          <!-- Barra de progreso miniatura -->
-          <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/80">
-            <div id="bar-residuos" class="h-full bg-purple-500 rounded-full transition-all duration-700" style="width: 42%;"></div>
+          <!-- Sparkline de tendencia (SVG) -->
+          <div class="w-20 h-10 pb-1">
+            <svg class="w-full h-full" viewBox="0 0 100 40">
+              <defs>
+                <linearGradient id="spark-res-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#bd5bff" stop-opacity="0.3"></stop>
+                  <stop offset="100%" stop-color="#bd5bff" stop-opacity="0.0"></stop>
+                </linearGradient>
+              </defs>
+              <path id="sparkline-res-path" d="M 0 30 L 15 28 L 30 32 L 45 25 L 60 22 L 75 26 L 90 20 L 100 18" fill="none" stroke="#bd5bff" stroke-width="1.8" />
+              <path id="sparkline-res-area" d="M 0 30 L 15 28 L 30 32 L 45 25 L 60 22 L 75 26 L 90 20 L 100 18 L 100 40 L 0 40 Z" fill="url(#spark-res-grad)" />
+            </svg>
           </div>
         </div>
       </div>
@@ -287,10 +349,10 @@
         <div class="flex justify-between items-end mt-1">
           <div>
             <p class="text-lg font-bold font-mono text-slate-100" id="val-energia">78.2%</p>
-            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Generación Limpia</p>
-          </div>
-          <div class="text-right">
-            <span class="text-[9px] font-mono text-amber-400 font-medium">Red Estable</span>
+            <div id="badge-energia" class="px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-amber-500/10 border border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.15)] flex items-center gap-1.5 mt-1 w-fit">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+              Red Estable
+            </div>
           </div>
         </div>
       </div>
@@ -308,33 +370,51 @@
           
           <!-- Elemento DOM para el canvas de Deck.gl -->
           <div id="deck-map-container" class="absolute inset-0 w-full h-full"></div>
+          <div id="persistent-tooltips-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+          <!-- CONTROLES FLOTANTES IZQUIERDOS (Top Left) -->
+          <div class="absolute top-4 left-4 z-20 flex flex-col gap-3 pointer-events-none w-64">
+            <!-- AVISO DE SIMULACION EN CURSO -->
+            <div id="crisis-banner" class="hidden scada-card border-red-500/50 bg-red-950/20 px-4 py-2 shadow-2xl items-center gap-3 animate-pulse siren-active w-full flex-shrink-0">
+              <div class="w-2.5 h-2.5 rounded-full bg-red-500 glow-red flex-shrink-0"></div>
+              <div class="text-left">
+                <h4 class="text-xs font-bold font-mono text-red-400 uppercase tracking-wider">ESTADO DE ALERTA ACTIVADO</h4>
+                <p class="text-[9px] font-mono text-slate-400">Incidentes graves reportados en el Gemelo Digital</p>
+              </div>
+            </div>
+
+            <!-- DIRECTORIO DE ACTIVOS -->
+            <div class="pointer-events-auto w-full" onclick="event.stopPropagation()">
+              <div class="scada-card border-slate-700 bg-slate-950/80 p-3 shadow-2xl w-full text-left">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                  <span class="text-[9px] font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1.5 font-bold">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> DIRECTORIO DE ACTIVOS
+                  </span>
+                  <span class="text-[8px] font-mono text-slate-500">AGUA & RESIDUOS</span>
+                </div>
+                <div id="asset-directory-list" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                  <!-- Se poblará dinámicamente -->
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- CONTROLES FLOTANTES DEL MAPA (Top Right) -->
           <div class="absolute top-4 right-4 z-20 flex flex-col gap-2.5">
-            <!-- Selector de Modo de Mapa -->
-            <div class="scada-card border-slate-700 bg-slate-950/80 px-2 py-1.5 flex items-center gap-1.5 shadow-2xl">
-              <button id="btn-mode-canvas" class="px-2 py-1 rounded text-[9.5px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] transition-all" onclick="setMapMode('canvas')">
-                DECK.GL GEMELO 3D
-              </button>
-              <button id="btn-mode-mapbox" class="px-2 py-1 rounded text-[9.5px] font-mono font-bold text-slate-500 hover:text-slate-300 transition-all" onclick="setMapMode('mapbox')">
-                MAPBOX 3D BASE
-              </button>
-            </div>
-            
             <!-- Toggles de Capas -->
-            <div class="scada-card border-slate-700 bg-slate-950/80 p-2 flex flex-col gap-2 shadow-2xl items-end">
+            <div class="scada-card border-slate-700 bg-slate-950/80 p-2 flex flex-col gap-2 shadow-2xl items-end w-52">
               <span class="text-[8px] font-mono text-slate-500 uppercase tracking-widest mb-1 self-start pl-1">Capas Activas</span>
               
               <!-- Capa Tráfico -->
               <button id="toggle-traffic" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-emerald-500/30 bg-emerald-950/15 text-emerald-400 text-xs font-mono transition-all hover:bg-emerald-950/30" onclick="toggleMapLayer('traffic')">
-                <span class="flex items-center gap-1.5"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i> TRÁFICO REGIONAL</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i> TRÁFICO VEHICULAR</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-green"></span>
               </button>
 
               <!-- Capa Agua y Residuos -->
-              <button id="toggle-waterWaste" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-cyan-500/30 bg-cyan-950/15 text-cyan-400 text-xs font-mono transition-all hover:bg-cyan-950/30" onclick="toggleMapLayer('waterWaste')">
+              <button id="toggle-waterWaste" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('waterWaste')">
                 <span class="flex items-center gap-1.5"><i data-lucide="droplet" class="w-3.5 h-3.5"></i> AGUA Y RESIDUOS</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 glow-cyan"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
               </button>
               
               <!-- Capa Aire Calidad -->
@@ -351,73 +431,62 @@
               
               <!-- Cámara Reset -->
               <button class="w-full flex items-center gap-1.5 justify-center px-2 py-1 rounded border border-slate-800 bg-slate-900 text-slate-300 text-[10px] font-mono hover:border-slate-700 transition-all mt-1" onclick="resetMapCamera()">
-                <i data-lucide="navigation-2" class="w-3 h-3 rotate-45"></i> ENCUADRE REGIONAL
+                <i data-lucide="navigation-2" class="w-3 h-3 rotate-45 text-cyan-400"></i> ENCUADRE REGIONAL
               </button>
+
+              <!-- Leyenda Toggle -->
+              <button id="btn-toggle-legend" class="w-full flex items-center justify-between px-2 py-1 rounded border border-slate-800 bg-slate-900/60 text-slate-400 text-[10px] font-mono hover:text-slate-200 transition-all mt-1" onclick="toggleLegendContent()">
+                <span class="flex items-center gap-1"><i data-lucide="info" class="w-3 h-3 text-cyan-400"></i> SIMBOLOGÍA</span>
+                <i data-lucide="chevron-down" id="legend-chevron" class="w-3.5 h-3.5 transition-transform duration-300"></i>
+              </button>
+
+              <!-- Contenido de Leyenda Colapsable -->
+              <div id="legend-content" class="hidden w-full flex-col gap-2 pt-2 border-t border-slate-800/80 mt-1 text-left pointer-events-auto">
+                <div class="space-y-2 text-[9px] font-mono text-left w-full pl-1">
+                  <div>
+                    <span class="text-[8.5px] font-bold text-slate-500 block mb-1">TRÁFICO VEHICULAR</span>
+                    <div class="flex gap-1.5 items-center">
+                      <span class="w-2.5 h-1 bg-[#50c8b4] rounded-sm inline-block"></span> <span class="text-slate-400">Fluido</span>
+                      <span class="w-2.5 h-1 bg-[#fac80a] rounded-sm inline-block"></span> <span class="text-slate-400">Denso</span>
+                      <span class="w-2.5 h-1 bg-[#f03232] rounded-sm inline-block"></span> <span class="text-slate-400">Crítico</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-[8.5px] font-bold text-slate-500 block mb-1">AGUA Y SANEAMIENTO</span>
+                    <div class="flex gap-1.5 items-center">
+                      <span class="w-2.5 h-0.5 bg-[#0096f0] inline-block"></span> <span class="text-slate-400">Tuberías</span>
+                      <span class="w-2 h-2 rounded-full bg-[#00c8ff] inline-block"></span> <span class="text-slate-400">Nodos Ok</span>
+                      <span class="w-2 h-2 rounded-full bg-[#f97316] animate-ping inline-block"></span> <span class="text-slate-400">Fuga</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-[8.5px] font-bold text-slate-500 block mb-1">GESTIÓN DE RESIDUOS</span>
+                    <div class="flex gap-1.5 items-center flex-wrap">
+                      <span class="w-2 h-2 bg-[#10b981] inline-block rounded-sm"></span> <span class="text-slate-400">Vacío</span>
+                      <span class="w-2 h-2 bg-[#fac80a] inline-block rounded-sm"></span> <span class="text-slate-400">Medio</span>
+                      <span class="w-2 h-2 bg-[#bd5bff] inline-block rounded-sm"></span> <span class="text-slate-400">Lleno</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-[8.5px] font-bold text-slate-500 block mb-1">CALIDAD DEL AIRE (ICA)</span>
+                    <div class="flex gap-1.5 items-center">
+                      <span class="w-3.5 h-1.5 bg-purple-500/25 border border-purple-500/50 rounded-sm inline-block"></span> <span class="text-slate-400">Polución</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-[8.5px] font-bold text-slate-500 block mb-1">EFICIENCIA ENERGÉTICA</span>
+                    <div class="flex gap-1.5 items-center flex-wrap">
+                      <span class="w-3 h-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-sm inline-block"></span> <span class="text-slate-400">Ahorro</span>
+                      <span class="w-3 h-1.5 bg-red-500/10 border border-red-500/30 rounded-sm inline-block"></span> <span class="text-slate-400">Pérdida</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
-          <!-- LEYENDA DEL MAPA (Bottom Right) -->
-          <div class="absolute bottom-4 right-4 z-20 scada-card border-slate-800 bg-slate-950/85 p-3 w-48 shadow-2xl pointer-events-none">
-            <h4 class="text-[9px] font-bold font-mono tracking-wider text-slate-300 uppercase mb-2 border-b border-slate-800/80 pb-1 flex items-center justify-between">
-              <span>SALA DE OPERACIONES</span>
-              <span class="text-[8px] font-normal text-slate-500">Capas Activas</span>
-            </h4>
-            <div class="space-y-2 text-[9px] font-mono">
-              <div>
-                <span class="text-[8px] font-bold text-slate-500 block mb-1">TRÁFICO VEHICULAR</span>
-                <div class="flex gap-1.5 items-center">
-                  <span class="w-2 h-1 bg-emerald-400 rounded-sm inline-block"></span> <span class="text-slate-400">Normal</span>
-                  <span class="w-2 h-1 bg-amber-400 rounded-sm inline-block"></span> <span class="text-slate-400">Denso</span>
-                  <span class="w-2 h-1 bg-red-500 rounded-sm inline-block"></span> <span class="text-slate-400">Crítico</span>
-                </div>
-              </div>
-              <div>
-                <span class="text-[8px] font-bold text-slate-500 block mb-1">INFRAESTRUCTURA DE RED</span>
-                <div class="flex gap-1.5 items-center">
-                  <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span> <span class="text-slate-400">Agua/Residuos</span>
-                  <span class="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block"></span> <span class="text-slate-400">Nodo Alerta</span>
-                </div>
-              </div>
-              <div>
-                <span class="text-[8px] font-bold text-slate-500 block mb-1">CALIDAD DEL AIRE (ICA)</span>
-                <div class="flex gap-1.5 items-center">
-                  <span class="w-3.5 h-1.5 bg-gradient-to-r from-emerald-500/30 to-orange-500/40 rounded-sm inline-block"></span> <span class="text-slate-400">Neblina Zonal</span>
-                </div>
-              </div>
-              <div>
-                <span class="text-[8px] font-bold text-slate-500 block mb-1">EFICIENCIA ENERGÉTICA</span>
-                <div class="flex gap-1.5 items-center">
-                  <span class="w-3.5 h-1.5 bg-cyan-500/25 rounded-sm inline-block"></span> <span class="text-slate-400">Coropleta Municipal</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- CONFIGURACIÓN DE TOKEN (Bottom Left) -->
-          <div class="absolute bottom-4 left-4 z-20 flex items-center gap-2" id="token-box-container">
-            <button class="w-7 h-7 rounded border border-slate-800 bg-slate-950/80 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 shadow-xl transition-all" onclick="toggleTokenSettings()" title="Ajustes de Mapbox">
-              <i data-lucide="settings" class="w-4 h-4"></i>
-            </button>
-            <div id="token-settings-panel" class="hidden scada-card border-slate-800 bg-slate-950/90 p-3 shadow-2xl flex-col gap-2 w-64">
-              <h5 class="text-[10px] font-bold font-mono text-slate-300 uppercase">Configuración de Mapbox</h5>
-              <p class="text-[9px] text-slate-500 leading-normal mb-1">Para visualizar mapa base de Mapbox original en conjunto con Deck.gl, introduce tu token público.</p>
-              <input type="text" id="mapbox-token-input" placeholder="pk.eyJ1Ijo..." class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[10px] font-mono text-slate-300 focus:outline-none focus:border-cyan-500/60" />
-              <div class="flex gap-2 justify-end mt-1">
-                <button class="px-2 py-1 bg-slate-850 border border-slate-800 hover:bg-slate-800 rounded text-[9px] font-mono text-slate-400 transition-all" onclick="clearMapboxToken()">Borrar</button>
-                <button class="px-2.5 py-1 bg-cyan-950/50 border border-cyan-800 hover:bg-cyan-900/50 rounded text-[9px] font-mono text-cyan-400 transition-all font-bold" onclick="saveMapboxToken()">Guardar</button>
-              </div>
-            </div>
-            <span class="text-[9px] font-mono text-slate-600 bg-slate-950/60 px-2 py-1 rounded" id="map-status-text">Modo: Deck.gl Gemelo 3D (Sin Token)</span>
-          </div>
-
-          <!-- AVISO DE SIMULACION EN CURSO -->
-          <div id="crisis-banner" class="hidden absolute top-4 left-4 z-20 scada-card border-red-500/50 bg-red-950/20 px-4 py-2 shadow-2xl items-center gap-3 animate-pulse siren-active pointer-events-none">
-            <div class="w-2.5 h-2.5 rounded-full bg-red-500 glow-red"></div>
-            <div>
-              <h4 class="text-xs font-bold font-mono text-red-400 uppercase tracking-wider">ESTADO DE ALERTA ACTIVADO</h4>
-              <p class="text-[9px] font-mono text-slate-400">Incidentes graves reportados en el Gemelo Digital</p>
-            </div>
-          </div>
 
         </div>
       </div>
@@ -538,22 +607,21 @@
 
       layers: {
         traffic: true,
-        waterWaste: true,
+        waterWaste: false,
         airQuality: false,
         energyGrid: false,
         events: true
-      },
+      },      hoveredObjectId: null,
+      selectedObjectId: null,
+      selectedObjectType: null,
 
-      mapMode: 'canvas', // 'canvas' para Deck.gl puro (con Terrain y TileLayer), 'mapbox' para basemap nativo
-      mapboxToken: localStorage.getItem('mapbox_access_token') || '',
-      mapboxInitialized: false,
-      
       // Control de ticks de animación
       animationTime: {
         fluid: 0,
         slow: 0,
         congested: 0,
-        pulse: 0
+        pulse: 0,
+        waterFlowOffset: 0
       },
 
       // Estructuras de datos pregeneradas en memoria
@@ -629,7 +697,7 @@
     let currentViewState = {
       longitude: -3.703790,
       latitude: 40.416775,
-      zoom: 9.0,
+      zoom: 11.3,
       pitch: 52,
       bearing: -10,
       maxZoom: 16,
@@ -650,6 +718,25 @@
       return pts;
     }
 
+    // Calcula el centroide aproximado de una geometría (Polygon o MultiPolygon)
+    function getCentroid(geometry) {
+      let coords = [];
+      if (geometry.type === 'Polygon') {
+        coords = geometry.coordinates[0];
+      } else if (geometry.type === 'MultiPolygon') {
+        coords = geometry.coordinates[0][0];
+      }
+      let xSum = 0;
+      let ySum = 0;
+      let count = coords ? coords.length : 0;
+      if (count === 0) return [0, 0];
+      for (let i = 0; i < count; i++) {
+        xSum += coords[i][0];
+        ySum += coords[i][1];
+      }
+      return [xSum / count, ySum / count];
+    }
+
     // Inicializa todos los datos en memoria al arrancar
     async function prepare3DMapData() {
       // 1. Nodos de Agua y Residuos (Infraestructuras Críticas)
@@ -662,7 +749,20 @@
         { id: 'n-az', name: 'Embalse del Atazar (CYII Principal)', type: 'water', coords: [-3.47, 40.94] },
         { id: 'n-vy', name: 'Embalse de Valmayor', type: 'water', coords: [-4.032, 40.548] },
         { id: 'n-al', name: 'Punto Limpio Alcalá H.', type: 'waste', coords: [-3.364, 40.48] },
-        { id: 'n-lr', name: 'Planta Elevadora Las Rozas', type: 'water', coords: [-3.874, 40.49] }
+        { id: 'n-lr', name: 'Estación de Bombeo Las Rozas (CYII)', type: 'water', coords: [-3.874, 40.49] },
+        
+        // Activos Coherentes en los quiebros / intersecciones (Válvulas y Sensores)
+        { id: 'n-patones', name: 'Válvula de Seccionamiento Patones', type: 'water_control', coords: [-3.485, 40.86] },
+        { id: 'n-torrelaguna', name: 'Sensor de Presión Torrelaguna', type: 'water_control', coords: [-3.53, 40.82] },
+        { id: 'n-guadalix', name: 'Válvula Reguladora Guadalix', type: 'water_control', coords: [-3.695, 40.78] },
+        { id: 'n-trescantos', name: 'Sensor de Caudal Tres Cantos', type: 'water_control', coords: [-3.715, 40.60] },
+        { id: 'n-montecarmelo', name: 'Sensor de Presión Montecarmelo', type: 'water_control', coords: [-3.71, 40.515] },
+        { id: 'n-galapagar', name: 'Válvula Reguladora Galapagar', type: 'water_control', coords: [-4.00, 40.478] },
+        { id: 'n-plantio', name: 'Sensor de Caudal El Plantío', type: 'water_control', coords: [-3.812, 40.465] },
+        { id: 'n-aravaca', name: 'Sensor de Presión Aravaca', type: 'water_control', coords: [-3.775, 40.455] },
+        { id: 'n-moncloa', name: 'Válvula de Entrada Moncloa', type: 'water_control', coords: [-3.729, 40.435] },
+        { id: 'n-molina', name: 'Válvula Reguladora María de Molina', type: 'water_control', coords: [-3.689, 40.437] },
+        { id: 'n-valdebernardo', name: 'Sensor de Presión Valdebernardo', type: 'water_control', coords: [-3.625, 40.380] }
       ];
 
       // 2. Zonas de Calidad del Aire (Medio Ambiente)
@@ -859,6 +959,81 @@
         ]
       };
 
+      // 3.5. Estructuras de datos adicionales para capas temáticas
+      STATE.waterPipes = [
+        {
+          id: 'pipe-atazar-pc',
+          path: [ [-3.47, 40.94], [-3.485, 40.86], [-3.53, 40.82], [-3.58, 40.73], [-3.695, 40.78], [-3.715, 40.60], [-3.71, 40.515], [-3.6892, 40.4662] ]
+        },
+        {
+          id: 'pipe-pc-sede',
+          path: [ [-3.6892, 40.4662], [-3.6908, 40.458], [-3.6917, 40.446], [-3.7045, 40.4385] ]
+        },
+        {
+          id: 'pipe-val-rozas',
+          path: [ [-4.032, 40.548], [-4.00, 40.478], [-3.874, 40.49] ]
+        },
+        {
+          id: 'pipe-rozas-sede',
+          path: [ [-3.874, 40.49], [-3.812, 40.465], [-3.775, 40.455], [-3.729, 40.435], [-3.7045, 40.4385] ]
+        },
+        {
+          id: 'pipe-sede-valdemingomez',
+          path: [ [-3.7045, 40.4385], [-3.689, 40.437], [-3.660, 40.435], [-3.656, 40.420], [-3.665, 40.395], [-3.645, 40.390], [-3.625, 40.380], [-3.612, 40.370], [-3.605, 40.352] ]
+        },
+        {
+          id: 'pipe-pinto-valdemingomez',
+          path: [ [-3.71, 40.23], [-3.69, 40.29], [-3.64, 40.33], [-3.605, 40.352] ]
+        }
+      ];
+
+      // 3.6. Cargar y enriquecer el GeoJSON oficial de distritos de Madrid
+      try {
+        const resDistricts = await fetch('/madrid_districts.geojson');
+        STATE.wasteDistricts = await resDistricts.json();
+        
+        STATE.wasteDistricts.features.forEach((f, index) => {
+          const name = f.properties.name;
+          f.properties.id = `d-${index}`;
+          f.properties.centroid = getCentroid(f.geometry);
+          
+          let fillLevel = 30 + Math.round(Math.random() * 30);
+          if (name === 'Puente de Vallecas' || name === 'Villa de Vallecas') {
+            fillLevel = 92;
+          } else if (name === 'Centro' || name === 'Salamanca') {
+            fillLevel = 88;
+          } else if (name === 'Carabanchel' || name === 'Tetuán' || name === 'Usera' || name === 'Latina') {
+            fillLevel = 72;
+          } else if (name === 'Retiro' || name === 'Chamberí') {
+            fillLevel = 48;
+          }
+          f.properties.fillLevel = fillLevel;
+        });
+      } catch (e) {
+        console.error('Error al cargar madrid_districts.geojson:', e);
+        STATE.wasteDistricts = { type: 'FeatureCollection', features: [] };
+      }
+
+      STATE.pollutionPoints = [];
+      for (let i = 0; i < 45; i++) {
+        STATE.pollutionPoints.push({
+          coords: [-3.703790 + (Math.random() - 0.5) * 0.08, 40.416775 + (Math.random() - 0.5) * 0.08],
+          weight: Math.random() * 0.8 + 0.2
+        });
+      }
+      for (let i = 0; i < 25; i++) {
+        STATE.pollutionPoints.push({
+          coords: [-3.567990 + (Math.random() - 0.5) * 0.05, 40.483936 + (Math.random() - 0.5) * 0.05],
+          weight: Math.random() * 0.9 + 0.3
+        });
+      }
+      for (let i = 0; i < 30; i++) {
+        STATE.pollutionPoints.push({
+          coords: [-3.729350 + (Math.random() - 0.5) * 0.07, 40.308100 + (Math.random() - 0.5) * 0.07],
+          weight: Math.random() * 0.7 + 0.2
+        });
+      }
+
       // 4. Trazas para TripsLayer (Tráfico) desde carreteras reales
       try {
         const response = await fetch('/madrid_roads.geojson');
@@ -990,9 +1165,24 @@
       
       // Agua
       const valAgua = document.getElementById('val-agua');
-      const effAgua = STATE.pillars.agua.toFixed(1);
-      valAgua.textContent = `${(1.24 * (STATE.pillars.agua / 98.4)).toFixed(2)}M m³`;
-      valAgua.nextElementSibling.innerHTML = `<span class="w-1 h-1 rounded-full bg-cyan-400 animate-ping"></span> ${effAgua}% Eficiencia`;
+      const valAguaEff = document.getElementById('val-agua-eff');
+      const badgeAgua = document.getElementById('badge-agua');
+      const badgeAguaPing = document.getElementById('badge-agua-ping');
+      const cardAgua = document.getElementById('kpi-agua');
+      const effAgua = STATE.pillars.agua;
+      
+      valAgua.textContent = `${(1.24 * (effAgua / 98.4)).toFixed(2)}M m³`;
+      if (valAguaEff) valAguaEff.textContent = `${effAgua.toFixed(1)}%`;
+      
+      if (effAgua < 90) {
+        if (badgeAgua) badgeAgua.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-red-500/10 border border-red-500/40 text-red-400 shadow-[0_0_8px_rgba(239,68,68,0.2)] animate-pulse flex items-center gap-1.5 mt-1 w-fit';
+        if (badgeAguaPing) badgeAguaPing.className = 'w-1.5 h-1.5 rounded-full bg-red-400 animate-ping';
+        if (cardAgua) cardAgua.className = 'scada-card p-3 flex flex-col justify-between h-[100px] border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.15)] animate-pulse';
+      } else {
+        if (badgeAgua) badgeAgua.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_8px_rgba(0,200,255,0.15)] flex items-center gap-1.5 mt-1 w-fit';
+        if (badgeAguaPing) badgeAguaPing.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping';
+        if (cardAgua) cardAgua.className = 'scada-card p-3 flex flex-col justify-between h-[100px]';
+      }
       
       // ICA
       const icaVal = Math.round(150 - (STATE.pillars.medioambiente * 1.3));
@@ -1000,33 +1190,48 @@
       
       const badgeMA = document.getElementById('badge-medioambiente');
       const iconMA = document.getElementById('icon-container-ma');
+      const cardMA = document.getElementById('kpi-medioambiente');
       
       if (icaVal <= 50) {
         badgeMA.textContent = 'EXCELENTE';
         badgeMA.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)]';
-        iconMA.className = 'w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400';
+        if (iconMA) iconMA.className = 'w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400';
+        if (cardMA) cardMA.className = 'scada-card p-3 flex flex-col justify-between h-[100px]';
       } else if (icaVal <= 100) {
         badgeMA.textContent = 'MODERADO';
         badgeMA.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-amber-500/10 border border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.15)]';
-        iconMA.className = 'w-6 h-6 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400';
+        if (iconMA) iconMA.className = 'w-6 h-6 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400';
+        if (cardMA) cardMA.className = 'scada-card p-3 flex flex-col justify-between h-[100px] border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.1)]';
       } else {
         badgeMA.textContent = 'PRE-ALERTA';
         badgeMA.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-orange-500/10 border border-orange-500/40 text-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.2)] animate-pulse';
-        iconMA.className = 'w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400';
+        if (iconMA) iconMA.className = 'w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400';
+        if (cardMA) cardMA.className = 'scada-card p-3 flex flex-col justify-between h-[100px] border-orange-500/40 shadow-[0_0_12px_rgba(249,115,22,0.15)] animate-pulse';
       }
 
       // Residuos
       const fillResiduos = Math.round(100 - STATE.pillars.residuos * 1.0);
       document.getElementById('val-residuos').textContent = `${fillResiduos}%`;
-      const barResiduos = document.getElementById('bar-residuos');
-      barResiduos.style.width = `${fillResiduos}%`;
+      
+      const sparkPath = document.getElementById('sparkline-res-path');
+      const sparkArea = document.getElementById('sparkline-res-area');
+      const sparkGradStop1 = document.querySelector('#spark-res-grad stop:first-child');
+      const cardRes = document.getElementById('kpi-residuos');
+      
+      let resColor = '#bd5bff';
       if (fillResiduos > 75) {
-        barResiduos.className = 'h-full bg-red-500 rounded-full transition-all';
+        resColor = '#ef4444';
+        if (cardRes) cardRes.className = 'scada-card p-3 flex flex-col justify-between h-[100px] border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.15)] animate-pulse';
       } else if (fillResiduos > 50) {
-        barResiduos.className = 'h-full bg-amber-500 rounded-full transition-all';
+        resColor = '#f59e0b';
+        if (cardRes) cardRes.className = 'scada-card p-3 flex flex-col justify-between h-[100px] border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.1)]';
       } else {
-        barResiduos.className = 'h-full bg-purple-500 rounded-full transition-all';
+        if (cardRes) cardRes.className = 'scada-card p-3 flex flex-col justify-between h-[100px]';
       }
+      
+      if (sparkPath) sparkPath.setAttribute('stroke', resColor);
+      if (sparkArea) sparkArea.setAttribute('stroke', resColor);
+      if (sparkGradStop1) sparkGradStop1.setAttribute('stop-color', resColor);
 
       // Energía
       document.getElementById('val-energia').textContent = `${STATE.pillars.energia.toFixed(1)}%`;
@@ -1076,10 +1281,10 @@
         radar: {
           indicator: [
             { name: 'Movilidad', max: 100 },
-            { name: 'Gestión de Agua', max: 100 },
-            { name: 'Calidad del Aire', max: 100 },
-            { name: 'Gestión Residuos', max: 100 },
-            { name: 'Eficiencia Energética', max: 100 }
+            { name: 'Agua', max: 100 },
+            { name: 'Aire', max: 100 },
+            { name: 'Residuos', max: 100 },
+            { name: 'Energía', max: 100 }
           ],
           shape: 'polygon',
           radius: '68%',
@@ -1087,7 +1292,7 @@
           axisName: {
             color: '#94a3b8',
             fontFamily: 'JetBrains Mono',
-            fontSize: 9,
+            fontSize: 8,
             fontWeight: 500,
             formatter: (value) => value.toUpperCase()
           },
@@ -1257,6 +1462,7 @@
 
       recalculateSystemMetrics();
       renderIncidentsFeed();
+      renderAssetDirectory();
       
       // FlyTo automático
       focusOnCoordinates(newInc.coords);
@@ -1283,6 +1489,10 @@
         btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30`;
         indicator.className = 'w-1.5 h-1.5 rounded-full bg-slate-700';
       }
+
+      if (layer === 'waterWaste') {
+        renderAssetDirectory();
+      }
     }
 
     // FlyTo de cámara virtual en Deck.gl
@@ -1307,7 +1517,7 @@
         ...currentViewState,
         longitude: -3.703790,
         latitude: 40.416775,
-        zoom: 9.0,
+        zoom: 10.3,
         pitch: 52,
         bearing: -10,
         transitionDuration: 2500,
@@ -1318,63 +1528,200 @@
       }
     }
 
-    // Control de la configuración del Token de Mapbox
-    function toggleTokenSettings() {
-      const panel = document.getElementById('token-settings-panel');
-      const isHidden = panel.classList.contains('hidden');
+    // Control de la visualización de la Leyenda Colapsable
+    function toggleLegendContent() {
+      const content = document.getElementById('legend-content');
+      const chevron = document.getElementById('legend-chevron');
+      if (!content || !chevron) return;
+      const isHidden = content.classList.contains('hidden');
       if (isHidden) {
-        panel.classList.remove('hidden');
-        panel.classList.add('flex');
-        document.getElementById('mapbox-token-input').value = STATE.mapboxToken;
+        content.classList.remove('hidden');
+        content.classList.add('flex');
+        chevron.style.transform = 'rotate(180deg)';
       } else {
-        panel.classList.add('hidden');
-        panel.classList.remove('flex');
+        content.classList.add('hidden');
+        content.classList.remove('flex');
+        chevron.style.transform = 'rotate(0deg)';
       }
     }
 
-    function saveMapboxToken() {
-      const token = document.getElementById('mapbox-token-input').value.trim();
-      if (token) {
-        localStorage.setItem('mapbox_access_token', token);
-        STATE.mapboxToken = token;
-        toggleTokenSettings();
-        initDeckGLInstance(); // Re-inicializar con soporte de Mapbox base
-      } else {
-        alert("Por favor, introduce un token de Mapbox válido.");
+    // Actualiza la posición y contenido de los tooltips DOM flotantes persistentes
+    function updatePersistentTooltips() {
+      const container = document.getElementById('persistent-tooltips-container');
+      if (!container) return;
+
+      const isWaterWasteActive = STATE.layers.waterWaste;
+      
+      // Si la capa de agua y residuos no está activa o los datos no están cargados, vaciar el contenedor y salir
+      if (!isWaterWasteActive || !deckglInstance || !deckglInstance.width || !STATE.wasteDistricts || !STATE.wasteDistricts.features) {
+        container.innerHTML = '';
+        return;
       }
-    }
 
-    function clearMapboxToken() {
-      localStorage.removeItem('mapbox_access_token');
-      STATE.mapboxToken = '';
-      document.getElementById('mapbox-token-input').value = '';
-      toggleTokenSettings();
-      initDeckGLInstance(); // Regresar a modo Deck.gl puro sin token
-    }
+      // Obtener el viewport actual de Deck.gl para proyectar
+      let viewport;
+      try {
+        viewport = new deck.WebMercatorViewport({
+          ...currentViewState,
+          width: deckglInstance.width,
+          height: deckglInstance.height
+        });
+      } catch (e) {
+        return;
+      }
 
-    function setMapMode(mode) {
-      STATE.mapMode = mode;
-      const btnCanvas = document.getElementById('btn-mode-canvas');
-      const btnMapbox = document.getElementById('btn-mode-mapbox');
-      const statusText = document.getElementById('map-status-text');
+      const activeTooltipIds = [];
 
-      if (mode === 'mapbox') {
-        if (!STATE.mapboxToken) {
-          alert("No se ha configurado un Token de Mapbox. Por favor, introduce uno en el panel de la izquierda para usar este basemap.");
-          toggleTokenSettings();
-          setMapMode('canvas');
-          return;
+      // 1. Renderizar tooltips de Distritos de Residuos
+      STATE.wasteDistricts.features.forEach(f => {
+        const id = f.properties.id;
+        const name = f.properties.name;
+        const fillVal = f.properties.fillLevel;
+        const centroid = f.properties.centroid;
+        
+        // Proyectar coordenadas a pixels en pantalla
+        const [x, y] = viewport.project(centroid);
+        
+        const tooltipId = `tooltip-${id}`;
+        activeTooltipIds.push(tooltipId);
+
+        let el = document.getElementById(tooltipId);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = tooltipId;
+          container.appendChild(el);
         }
-        btnMapbox.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] transition-all';
-        btnCanvas.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold text-slate-500 hover:text-slate-300 transition-all';
-        statusText.textContent = "Modo: Mapbox 3D Base";
-        initDeckGLInstance();
-      } else {
-        btnCanvas.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] transition-all';
-        btnMapbox.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold text-slate-500 hover:text-slate-300 transition-all';
-        statusText.textContent = "Modo: Deck.gl Gemelo 3D (Sin Token)";
-        initDeckGLInstance();
-      }
+
+        // Determinar estado de salud del distrito
+        let stateClass = 'healthy';
+        let statusText = 'NOMINAL';
+        let badgeColor = 'text-emerald-400 font-bold';
+        let saturados = 2;
+        let recogidaText = 'Hace 2 horas';
+        
+        if (fillVal >= 80) {
+          stateClass = 'critical';
+          statusText = 'ESTADO CRÍTICO';
+          badgeColor = 'text-purple-400 font-bold animate-pulse';
+          saturados = fillVal === 88 ? 42 : (fillVal === 92 ? 45 : 36);
+          recogidaText = 'Hace 14 horas';
+        } else if (fillVal >= 60) {
+          stateClass = 'warning';
+          statusText = 'MODERADO';
+          badgeColor = 'text-amber-400 font-bold';
+          saturados = fillVal === 72 ? 18 : 12;
+          recogidaText = 'Hace 6 horas';
+        }
+
+        const isHovered = STATE.hoveredObjectId === id;
+        const isSelected = STATE.selectedObjectId === id;
+        
+        const isCriticalOrWarning = fillVal >= 60;
+        const shouldDisplay = isCriticalOrWarning || isHovered || isSelected;
+
+        if (shouldDisplay) {
+          const isExpanded = isHovered || isSelected;
+          el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+          
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.display = 'block';
+
+          if (isExpanded) {
+            el.innerHTML = `
+              <div class="text-left font-mono">
+                <strong class="text-xs text-purple-400 block border-b border-slate-800 pb-1 mb-1.5">📍 ${name}</strong>
+                <div class="space-y-1 text-[9.5px]">
+                  <div>Estado: <span class="${badgeColor}">${statusText}</span></div>
+                  <div>Llenado: <span class="text-slate-100 font-bold">${fillVal}%</span></div>
+                  <div>Saturados: <span class="text-red-400 font-bold">${saturados} uds</span></div>
+                  <div>Última Recogida: <span class="text-slate-300 font-medium">${recogidaText}</span></div>
+                </div>
+              </div>
+            `;
+          } else {
+            el.innerHTML = `<span class="font-bold text-slate-200">${name}</span>: <span class="${badgeColor}">${fillVal}%</span>`;
+          }
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      // 2. Renderizar tooltips de Nodos y Sensores de Agua
+      STATE.waterWasteNodes.forEach(node => {
+        if (node.type !== 'water' && node.type !== 'water_control') return;
+
+        const id = node.id;
+        const name = node.name;
+        const coords = node.coords;
+        
+        const [x, y] = viewport.project(coords);
+        
+        const tooltipId = `tooltip-${id}`;
+        activeTooltipIds.push(tooltipId);
+
+        let el = document.getElementById(tooltipId);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = tooltipId;
+          container.appendChild(el);
+        }
+
+        // Determinar alerta ante incidencias
+        let alertState = false;
+        STATE.activeIncidents.forEach(inc => {
+          const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
+          if (dist < 0.02) { 
+            alertState = true;
+          }
+        });
+
+        const isControl = node.type === 'water_control';
+        let stateClass = alertState ? 'warning' : 'healthy';
+        let statusText = alertState 
+          ? (node.id === 'n-lr' ? 'FALLO DE PRESIÓN: Bloqueada' : 'ALERTA: Caída de Presión / Caudal')
+          : (node.id === 'n-lr' ? 'PRESIÓN NOMINAL: 4.2 Bar' : 'Normal / Estable');
+          
+        let badgeColor = alertState ? 'text-orange-400 font-bold animate-pulse' : 'text-cyan-400 font-bold';
+
+        const isHovered = STATE.hoveredObjectId === id;
+        const isSelected = STATE.selectedObjectId === id;
+        
+        const shouldDisplay = alertState || isHovered || isSelected;
+
+        if (shouldDisplay) {
+          const isExpanded = isHovered || isSelected;
+          el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+          
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.display = 'block';
+
+          if (isExpanded) {
+            el.innerHTML = `
+              <div class="text-left font-mono" style="min-width: 180px;">
+                <strong class="text-xs text-cyan-400 block border-b border-slate-800 pb-1 mb-1.5">💧 ${name}</strong>
+                <div class="space-y-1 text-[9.5px]">
+                  <div>Tipo: <span class="text-slate-100">${isControl ? 'Telemetría / Válvula' : 'Estación / Depósito'}</span></div>
+                  <div>Estado: <span class="${badgeColor}">${statusText}</span></div>
+                  <div>Coordenadas: <span class="text-slate-400">${coords[0].toFixed(3)}, ${coords[1].toFixed(3)}</span></div>
+                </div>
+              </div>
+            `;
+          } else {
+            el.innerHTML = `<span class="font-bold text-slate-200">${name}</span>: <span class="${badgeColor}">${alertState ? 'ALERTA' : 'OK'}</span>`;
+          }
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      // 3. Eliminar tooltips obsoletos en el contenedor
+      Array.from(container.children).forEach(child => {
+        if (!activeTooltipIds.includes(child.id)) {
+          child.remove();
+        }
+      });
     }
 
     // -------------------------------------------------------------
@@ -1408,37 +1755,67 @@
         onViewStateChange: ({viewState}) => {
           currentViewState = viewState;
           deckglInstance.setProps({ viewState: currentViewState });
+          updatePersistentTooltips();
+        },
+        onClick: (info) => {
+          if (info.object) {
+            // Si es un distrito (GeoJsonLayer)
+            if (info.object.properties && info.object.properties.fillLevel !== undefined) {
+              STATE.selectedObjectId = info.object.properties.id;
+              STATE.selectedObjectType = 'district';
+            }
+            // Si es un nodo de agua (ScatterplotLayer)
+            else if (info.object.name && info.object.status && info.object.type === 'water') {
+              STATE.selectedObjectId = info.object.id || info.object.name;
+              STATE.selectedObjectType = 'water';
+            } else {
+              STATE.selectedObjectId = null;
+              STATE.selectedObjectType = null;
+            }
+          } else {
+            STATE.selectedObjectId = null;
+            STATE.selectedObjectType = null;
+          }
+          updatePersistentTooltips();
+          renderAssetDirectory(); // Re-renderizar el listado para reflejar selección
         },
         controller: true,
         effects: [lightingEffect],
         getTooltip: ({object}) => {
           if (!object) return null;
           
-          // 1. Hover en un Nodo de Agua/Residuos (ScatterplotLayer)
-          if (object.name && object.status) {
-            let badgeColor = object.status.includes('Alerta') ? 'text-red-400 font-bold animate-pulse' : 'text-cyan-400';
+          // 1. Hover en un Nodo de Agua (ScatterplotLayer) -> Devolución de null para usar el tooltip persistente del DOM
+          if (object.name && object.status && object.type === 'water') {
+            return null;
+          }
+          
+          // 1.2. Hover en un Nodo de Residuos (Pines 3D de ColumnLayer) -> Tooltip nativo
+          if (object.name && object.status && object.type === 'waste') {
+            let badgeColor = object.status.includes('Saturado') ? 'text-purple-400 font-bold animate-pulse' : 'text-emerald-400';
             return {
               html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 200px;">
                        <strong class="text-xs font-mono text-cyan-400 block border-b border-slate-850 pb-1 mb-1">${object.name}</strong>
-                       <p class="font-mono">Tipo: ${object.type === 'water' ? 'Hídrica (CYII)' : 'Gestión Residuos'}</p>
+                       <p class="font-mono">Tipo: Gestión Residuos</p>
                        <p class="font-mono">Estado: <span class="${badgeColor}">${object.status}</span></p>
                      </div>`
             };
           }
 
-          // 2. Hover en un prisma de Alerta 3D (ColumnLayer)
+          // 1.5 Hover en un barrio de recolección de residuos (GeoJsonLayer)
+          if (object.properties && object.properties.fillLevel !== undefined) {
+            return null; // El tooltip flotante persistente en el DOM ya se encarga de mostrar la información
+          }
+
+          // 2. Hover en un prisma de Alerta o rayo láser 3D
           if (object.title) {
             let colText = 'text-cyan-400';
-            if (object.color[0] > 200) {
-              colText = object.color[1] < 100 ? 'text-red-400' : 'text-orange-400';
+            if (object.color && object.color[0] > 200) {
+              colText = object.color[1] < 100 ? 'text-red-400 font-bold' : 'text-orange-400 font-bold';
             }
             return {
               html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 220px;">
                        <strong class="text-xs font-mono ${colText} block border-b border-slate-850 pb-1 mb-1">${object.title}</strong>
                        <p class="mb-1 leading-normal text-slate-400">${object.desc}</p>
-                       <div class="text-[8.5px] font-mono text-slate-500 border-t border-slate-900/60 pt-1 mt-1">
-                         Pos: ${object.position[1].toFixed(4)}, ${object.position[0].toFixed(4)}
-                       </div>
                      </div>`
             };
           }
@@ -1474,18 +1851,10 @@
         layers: []
       };
 
-      // Si tenemos token y estamos en modo mapbox, usar DeckGL (que monta Mapbox nativo en el fondo)
-      if (STATE.mapboxToken && STATE.mapMode === 'mapbox') {
-        deckProps.container = 'deck-map-container';
-        deckProps.mapboxApiAccessToken = STATE.mapboxToken;
-        deckProps.mapStyle = 'mapbox://styles/mapbox/dark-v11';
-        deckglInstance = new deck.DeckGL(deckProps);
-      } else {
-        // Modo puro Deck.gl (sin Mapbox en absoluto, sin logo, robusto)
-        // Usamos la clase deck.Deck base vinculada a una etiqueta div para evitar que intente montar Mapbox
-        deckProps.parent = document.getElementById('deck-map-container');
-        deckglInstance = new deck.Deck(deckProps);
-      }
+      // Modo puro Deck.gl (sin Mapbox en absoluto, sin logo, robusto)
+      // Usamos la clase deck.Deck base vinculada a una etiqueta div para evitar que intente montar Mapbox
+      deckProps.parent = document.getElementById('deck-map-container');
+      deckglInstance = new deck.Deck(deckProps);
       
       // Limpiar cache de capas estáticas al re-inicializar
       cachedStaticLayers = null;
@@ -1501,9 +1870,8 @@
 
       const layers = [];
 
-      // 1. CAPA DE MAPA BASE VECTORIAL (TileLayer) - Solo si no usamos Mapbox nativo
-      if (!STATE.mapboxToken || STATE.mapMode === 'canvas') {
-        layers.push(new deck.TileLayer({
+      // 1. CAPA DE MAPA BASE VECTORIAL (TileLayer)
+      layers.push(new deck.TileLayer({
           id: 'basemap-tile-layer',
           data: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
           minZoom: 0,
@@ -1527,25 +1895,17 @@
           }
         }));
 
-        // 2. CONTORNO DE LA COMUNIDAD DE MADRID (GeoJsonLayer) - Brillo neón cian
+        // 2. CONTORNO DE LA CIUDAD DE MADRID (GeoJsonLayer) - Brillo neón cian
         layers.push(new deck.GeoJsonLayer({
           id: 'madrid-boundary-layer',
-          data: {
-            type: 'Feature',
-            geometry: {
-              type: 'Polygon',
-              coordinates: [madridBoundary]
-            },
-            properties: { name: 'Comunidad de Madrid' }
-          },
+          data: '/madrid_districts.geojson',
           filled: true,
           stroked: true,
-          getFillColor: [13, 22, 45, 60], // azul translúcido
-          getLineColor: [0, 240, 255, 140], // cian brillante neón para el borde
-          getLineWidth: 2,
-          lineWidthMinPixels: 2
+          getFillColor: [13, 22, 45, 55], // azul translúcido
+          getLineColor: [0, 240, 255, 120], // cian brillante neón para el contorno
+          getLineWidth: 2.2,
+          lineWidthMinPixels: 1.5
         }));
-      }
 
       cachedStaticLayers = layers;
       return cachedStaticLayers;
@@ -1593,7 +1953,7 @@
           data: fluidVehicles,
           getPath: d => d.path,
           getTimestamps: d => d.timestamps,
-          getColor: [80, 200, 180], // Turquesa suave
+          getColor: [80, 200, 180], 
           opacity: 0.8,
           widthMinPixels: 2.0,
           rounded: true,
@@ -1607,7 +1967,7 @@
           data: slowVehicles,
           getPath: d => d.path,
           getTimestamps: d => d.timestamps,
-          getColor: [250, 200, 10], // Amarillo
+          getColor: [250, 200, 10], 
           opacity: 0.9,
           widthMinPixels: 2.5,
           rounded: true,
@@ -1621,7 +1981,7 @@
           data: congestedVehicles,
           getPath: d => d.path,
           getTimestamps: d => d.timestamps,
-          getColor: [240, 50, 50], // Rojo
+          getColor: [240, 50, 50], 
           opacity: 1.0,
           widthMinPixels: 3.0,
           rounded: true,
@@ -1630,12 +1990,89 @@
         }));
       }
 
-      // 2. CAPA DE INFRAESTRUCTURA HÍDRICA Y RESIDUOS (ScatterplotLayer)
+      // 2. CAPA DE INFRAESTRUCTURA HÍDRICA Y RESIDUOS (PathLayer, GeoJsonLayer, ScatterplotLayer, ColumnLayer)
       if (STATE.layers.waterWaste) {
         const nodesData = [];
         const wavesData = [];
+        const wastePins = [];
         const pulse = STATE.animationTime.pulse || 0;
 
+        // 2.1 Red de Tuberías principal (Base sólida y flujo dinámico con quiebros)
+        const isRozasIncidentActive = STATE.activeIncidents.some(inc => inc.title.includes('Las Rozas') || inc.desc.includes('Rozas'));
+        
+        // Base de la tubería (conducción física)
+        layers.push(new deck.PathLayer({
+          id: 'water-pipes-base-layer',
+          data: STATE.waterPipes,
+          getPath: d => d.path,
+          getColor: d => {
+            if (d.id === 'pipe-rozas-sede' && isRozasIncidentActive) {
+              return [249, 115, 22, 90]; // Naranja base en tramo con fallo
+            }
+            return [0, 100, 200, 95]; // Azul oscuro base
+          },
+          getWidth: 24, 
+          widthMinPixels: 3.0,
+          widthMaxPixels: 6.0,
+          pickable: true
+        }));
+
+        // Flujo de agua (Dashes móviles brillantes)
+        layers.push(new deck.PathLayer({
+          id: 'water-pipes-flow-layer',
+          data: STATE.waterPipes,
+          getPath: d => d.path,
+          getColor: d => {
+            if (d.id === 'pipe-rozas-sede' && isRozasIncidentActive) {
+              const alpha = 130 + Math.round(Math.sin(pulse * Math.PI * 4) * 110); 
+              return [239, 68, 68, alpha]; // Rojo brillante parpadeante
+            }
+            return [0, 240, 255, 225]; // Cian brillante para flujo normal
+          },
+          getWidth: 20, 
+          widthMinPixels: 2.0,
+          widthMaxPixels: 4.5,
+          getDashArray: [12, 16],
+          dashOffset: d => {
+            if (d.id === 'pipe-rozas-sede' && isRozasIncidentActive) {
+              return 0; // Detiene el flujo (congelado)
+            }
+            return -STATE.animationTime.waterFlowOffset; // Avanza el flujo
+          },
+          dashJustified: true
+        }));
+
+        // 2.2 Sombreado de Límites de Barrio de Residuos (GeoJsonLayer con opacidad muy baja)
+        layers.push(new deck.GeoJsonLayer({
+          id: 'waste-districts-layer',
+          data: STATE.wasteDistricts || { type: 'FeatureCollection', features: [] },
+          filled: true,
+          stroked: true,
+          getFillColor: f => {
+            const fillVal = f.properties.fillLevel;
+            if (fillVal >= 80) return [189, 91, 255, 30]; // Crítico: morado neón
+            if (fillVal >= 60) return [249, 115, 22, 25];  // Aviso: naranja
+            return [16, 185, 129, 15]; // Saludable: verde
+          },
+          getLineColor: f => {
+            const fillVal = f.properties.fillLevel;
+            if (fillVal >= 80) return [189, 91, 255, 140]; 
+            if (fillVal >= 60) return [249, 115, 22, 120];
+            return [16, 185, 129, 90];
+          },
+          getLineWidth: 2.0,
+          lineWidthMinPixels: 1.0,
+          pickable: true,
+          onHover: info => {
+            const id = info.object ? info.object.properties.id : null;
+            if (STATE.hoveredObjectId !== id) {
+              STATE.hoveredObjectId = id;
+              updatePersistentTooltips();
+            }
+          }
+        }));
+
+        // 2.3 Procesar nodos de agua (Scatterplots) y waste (Pines volumétricos)
         STATE.waterWasteNodes.forEach(node => {
           let alertState = false;
           STATE.activeIncidents.forEach(inc => {
@@ -1645,46 +2082,93 @@
             }
           });
 
-          if (alertState) {
-            nodesData.push({
+          if (node.type === 'water' || node.type === 'water_control') {
+            const isControl = node.type === 'water_control';
+            const baseRadius = isControl ? 100 : 250;
+            
+            if (alertState) {
+              const statusText = node.id === 'n-lr' 
+                ? 'FALLO DE PRESIÓN: Estación de Bombeo Bloqueada / Caída del Flujo'
+                : (isControl ? 'ALERTA TELEMETRÍA: Caída de Carga / Sensor Anómalo' : 'Alerta de Presión / Caída Detectada');
+                
+              nodesData.push({
+                id: node.id,
+                position: node.coords,
+                color: [249, 115, 22, 220], // Naranja de advertencia
+                radius: baseRadius * 1.3,
+                name: node.name,
+                type: 'water',
+                status: statusText
+              });
+              wavesData.push({
+                position: node.coords,
+                color: [249, 115, 22, Math.max(0, (1 - pulse) * 160)], 
+                radius: (baseRadius * 1.3) + pulse * 1400 
+              });
+            } else {
+              const statusText = node.id === 'n-lr' 
+                ? 'PRESIÓN NOMINAL: 4.2 Bar / Bombeo Estable'
+                : (isControl ? 'Telemetría de Presión Nominal' : 'Presión Nominal Estable');
+
+              nodesData.push({
+                id: node.id,
+                position: node.coords,
+                color: [0, 150, 240, 180], 
+                radius: baseRadius,
+                name: node.name,
+                type: 'water',
+                status: statusText
+              });
+            }
+          } else if (node.type === 'waste') {
+            let color = [16, 185, 129, 200]; 
+            let height = 300;
+            let status = 'Bajo (Llenado < 20%)';
+            
+            if (alertState) {
+              color = [189, 91, 255, 220]; 
+              height = 800;
+              status = 'Saturado (Llenado > 90% - Recogida Urgente)';
+            } else if (node.id === 'n-pt') { 
+              color = [250, 200, 10, 200]; 
+              height = 550;
+              status = 'Medio (Llenado 60%)';
+            }
+            
+            wastePins.push({
               position: node.coords,
-              color: [240, 50, 50, 220], 
-              radius: 350,
+              height: height,
+              color: color,
               name: node.name,
               type: node.type,
-              status: 'Alerta Activa'
-            });
-            wavesData.push({
-              position: node.coords,
-              color: [240, 50, 50, Math.max(0, (1 - pulse) * 160)], 
-              radius: 350 + pulse * 1400 
-            });
-          } else {
-            nodesData.push({
-              position: node.coords,
-              color: [0, 200, 255, 120], 
-              radius: 250,
-              name: node.name,
-              type: node.type,
-              status: 'Operativo'
+              status: status
             });
           }
         });
 
+        // Nodos de agua (2D Scatterplots)
         layers.push(new deck.ScatterplotLayer({
-          id: 'water-waste-nodes',
+          id: 'water-nodes',
           data: nodesData,
           getPosition: d => d.position,
           getFillColor: d => d.color,
           getRadius: d => d.radius,
           pickable: true,
           radiusMinPixels: 4,
-          radiusMaxPixels: 15
+          radiusMaxPixels: 15,
+          onHover: info => {
+            const id = info.object ? info.object.id : null;
+            if (STATE.hoveredObjectId !== id) {
+              STATE.hoveredObjectId = id;
+              updatePersistentTooltips();
+            }
+          }
         }));
 
+        // Ondas de presión del agua
         if (wavesData.length > 0) {
           layers.push(new deck.ScatterplotLayer({
-            id: 'water-waste-waves',
+            id: 'water-waves',
             data: wavesData,
             getPosition: d => d.position,
             getFillColor: d => d.color,
@@ -1696,10 +2180,49 @@
             lineWidthMinPixels: 1
           }));
         }
+
+        // Pines volumétricos 3D de plantas de reciclaje
+        if (wastePins.length > 0) {
+          layers.push(new deck.ColumnLayer({
+            id: 'waste-pins-3d',
+            data: wastePins,
+            diskResolution: 12,
+            radius: 120, 
+            extruded: true,
+            pickable: true,
+            getFillColor: d => d.color,
+            getElevation: d => d.height,
+            getPosition: d => d.position,
+            material: {
+              ambient: 0.6,
+              diffuse: 0.5,
+              shininess: 40
+            }
+          }));
+        }
       }
 
-      // 3. CAPA DE CALIDAD DEL AIRE ATMOSFÉRICA (Zonal GeoJsonLayer translúcida)
+      // 3. CAPA DE CALIDAD DEL AIRE ATMOSFÉRICA (HeatmapLayer + GeoJsonLayer)
       if (STATE.layers.airQuality) {
+        // 3.1 Mapa de calor difuso floating por debajo
+        layers.push(new deck.HeatmapLayer({
+          id: 'pollution-heatmap',
+          data: STATE.pollutionPoints,
+          getPosition: d => d.coords,
+          getWeight: d => d.weight,
+          radiusPixels: 90,
+          intensity: 1.2,
+          threshold: 0.05,
+          colorRange: [
+            [16, 185, 129, 0],   
+            [16, 185, 129, 30],  
+            [250, 200, 10, 60],  
+            [249, 115, 22, 90],  
+            [189, 91, 255, 130]  
+          ]
+        }));
+
+        // 3.2 Zonas perimetrales transparentes
         const zonesGeoJson = {
           type: 'FeatureCollection',
           features: STATE.airQualityZones.features.map(f => {
@@ -1712,13 +2235,13 @@
               }
             });
 
-            let color = [16, 185, 129, 20]; // Verde/Azul muy sutil para excelente
+            let color = [16, 185, 129, 12]; 
             let status = 'Excelente';
             if (ica > 80) {
-              color = [249, 115, 22, 40]; // Naranja sutil
+              color = [249, 115, 22, 25]; 
               status = 'Inversión Térmica / Moderado';
             } else if (ica > 50) {
-              color = [250, 200, 10, 30]; // Amarillo
+              color = [250, 200, 10, 20]; 
               status = 'Regular';
             }
 
@@ -1740,14 +2263,14 @@
           filled: true,
           stroked: true,
           getFillColor: f => f.properties.color,
-          getLineColor: [0, 240, 255, 30], 
+          getLineColor: [0, 240, 255, 25], 
           getLineWidth: 1,
           lineWidthMinPixels: 0.5,
           pickable: true
         }));
       }
 
-      // 4. CAPA DE CONSUMO ENERGÉTICO POR ZONAS (Coropleta Municipal)
+      // 4. CAPA DE CONSUMO ENERGÉTICO POR ZONAS (Distritos con opacidad muy baja)
       if (STATE.layers.energyGrid) {
         layers.push(new deck.GeoJsonLayer({
           id: 'energy-municipalities-layer',
@@ -1756,95 +2279,86 @@
           stroked: true,
           getFillColor: f => {
             const eff = f.properties.efficiency;
-            if (eff >= 90) return [16, 185, 129, 45]; // Verde
-            if (eff >= 80) return [6, 182, 212, 40];  // Cian
-            return [245, 158, 11, 35]; // Ámbar
+            if (eff >= 85) return [16, 185, 129, 25]; // Verde ahorro sutil
+            if (eff >= 80) return [6, 182, 212, 25];  // Cian ahorro medio
+            return [239, 68, 68, 30]; // Rojo/Ámbar sobreconsumo sutil
           },
-          getLineColor: [51, 65, 85, 80], 
-          getLineWidth: 1.5,
-          lineWidthMinPixels: 1,
+          getLineColor: [0, 240, 255, 25], 
+          getLineWidth: 1.2,
+          lineWidthMinPixels: 0.8,
           pickable: true
         }));
       }
 
-      // 5. CAPA DE ALERTAS EN COLUMNAS 3D (Haces de luz translúcidos estéticos)
+      // 5. CAPA DE ALERTAS EN HACES DE LUZ LÁSER Y RIPPLES DE IMPACTO (LineLayer + ScatterplotLayer)
       if (STATE.layers.events) {
-        const coreData = [];
-        const glowData = [];
+        const rayData = [];
+        const ripplesData = [];
+        const pulse = STATE.animationTime.pulse || 0;
 
         STATE.activeIncidents.forEach(inc => {
-          let baseColor = [59, 130, 246]; // Info (azul/cian)
-          let height = 1500;
+          let baseColor = [59, 130, 246]; 
+          let height = 1200;
           if (inc.severity === 'critical') {
-            baseColor = [240, 50, 50]; // Crítico (rojo)
-            height = 4000;
+            baseColor = [240, 50, 50]; 
+            height = 3200;
           } else if (inc.severity === 'warning') {
-            baseColor = [249, 115, 22]; // Advertencia (naranja)
-            height = 2800;
+            baseColor = [249, 115, 22]; 
+            height = 2000;
           }
 
-          // Núcleo brillante y fino
-          coreData.push({
-            position: inc.coords,
-            height: height,
-            color: [...baseColor, 200], // Opacidad alta
+          rayData.push({
+            from: [inc.coords[0], inc.coords[1], 0],
+            to: [inc.coords[0], inc.coords[1], height],
+            color: [...baseColor, 255],
             title: inc.title,
             desc: inc.desc
           });
 
-          // Resplandor exterior difuso y translúcido
-          glowData.push({
+          const p1 = (pulse + 0.0) % 1.0;
+          ripplesData.push({
             position: inc.coords,
-            height: height,
-            color: [...baseColor, 45], // Muy translúcido
-            title: inc.title,
-            desc: inc.desc
+            radius: p1 * 1200,
+            color: [...baseColor, Math.max(0, (1 - p1) * 200)]
+          });
+
+          const p2 = (pulse + 0.5) % 1.0;
+          ripplesData.push({
+            position: inc.coords,
+            radius: p2 * 1200,
+            color: [...baseColor, Math.max(0, (1 - p2) * 200)]
           });
         });
 
-        // Capa de resplandor exterior (ancho y difuso)
-        layers.push(new deck.ColumnLayer({
-          id: 'events-glow-3d',
-          data: glowData,
-          diskResolution: 12,
-          radius: 120, // Diámetro amplio para simular el haz de luz extendido
-          extruded: true,
-          pickable: false, // No interfiere con el puntero
-          getFillColor: d => d.color,
-          getElevation: d => d.height,
-          getPosition: d => d.position,
+        layers.push(new deck.LineLayer({
+          id: 'events-lasers-3d',
+          data: rayData,
+          getSourcePosition: d => d.from,
+          getTargetPosition: d => d.to,
+          getColor: d => d.color,
+          getWidth: 4.0,
+          widthMinPixels: 2.5,
+          widthMaxPixels: 6.0,
+          pickable: true,
           updateTriggers: {
-            getFillColor: [STATE.activeIncidents],
-            getElevation: [STATE.activeIncidents]
-          },
-          material: {
-            ambient: 0.8,
-            diffuse: 0.2,
-            shininess: 10,
-            specularColor: [255, 255, 255]
+            getColor: [STATE.activeIncidents]
           }
         }));
 
-        // Capa de núcleo central (tipo láser de alta intensidad)
-        layers.push(new deck.ColumnLayer({
-          id: 'events-core-3d',
-          data: coreData,
-          diskResolution: 12,
-          radius: 20, // Núcleo muy delgado
-          extruded: true,
-          pickable: true, // Captura el tooltip
-          getFillColor: d => d.color,
-          getElevation: d => d.height,
+        layers.push(new deck.ScatterplotLayer({
+          id: 'events-ripples-3d',
+          data: ripplesData,
           getPosition: d => d.position,
+          getRadius: d => d.radius,
+          getFillColor: [0, 0, 0, 0], 
+          getLineColor: d => d.color,
+          getLineWidth: 2,
+          lineWidthMinPixels: 1.5,
+          stroked: true,
+          filled: false,
           updateTriggers: {
-            getFillColor: [STATE.activeIncidents],
-            getElevation: [STATE.activeIncidents]
-          },
-          material: {
-            ambient: 0.6,
-            diffuse: 0.5,
-            shininess: 60,
-            specularColor: [255, 255, 255]
+            getRadius: [pulse],
+            getLineColor: [pulse]
           }
         }));
       }
@@ -1876,10 +2390,186 @@
       if (!STATE.animationTime.pulse) STATE.animationTime.pulse = 0;
       STATE.animationTime.pulse = (STATE.animationTime.pulse + 0.015) % 1.0;
 
+      if (!STATE.animationTime.waterFlowOffset) STATE.animationTime.waterFlowOffset = 0;
+      STATE.animationTime.waterFlowOffset = (STATE.animationTime.waterFlowOffset + 0.35) % 100;
+
       // Actualizar visualizaciones del mapa
       updateDeckLayers();
-
+      updatePersistentTooltips();
       requestAnimationFrame(renderLoop);
+    }
+
+    // Selecciona un activo (sensor, válvula o distrito) y vuela la cámara hacia él
+    function selectMapAsset(type, id) {
+      let coords = null;
+
+      if (type === 'district') {
+        const feat = STATE.wasteDistricts.features.find(f => f.properties.id === id);
+        if (feat) {
+          coords = feat.properties.centroid;
+        }
+      } else {
+        const node = STATE.waterWasteNodes.find(n => n.id === id);
+        if (node) {
+          coords = node.coords;
+        }
+      }
+
+      if (coords) {
+        // Volar cámara al activo usando focusOnCoordinates
+        focusOnCoordinates(coords);
+        
+        // Registrar activo como seleccionado
+        STATE.selectedObjectId = id;
+        STATE.selectedObjectType = type === 'district' ? 'district' : 'water';
+        
+        // Limpiar hovered para evitar dobles expansiones raras
+        STATE.hoveredObjectId = null;
+
+        // Actualizar tooltips y el listado de directorio de activos
+        updatePersistentTooltips();
+        renderAssetDirectory();
+      }
+    }
+
+    // Renderiza dinámicamente el listado del Directorio de Activos
+    function renderAssetDirectory() {
+      const container = document.getElementById('asset-directory-list');
+      if (!container) return;
+
+      if (!STATE.layers.waterWaste) {
+        container.innerHTML = `
+          <div class="text-[9px] font-mono text-slate-500 text-center py-4">
+            Activa la capa de Agua y Residuos para visualizar los activos de la red.
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+
+      // 1. Red de Aguas (CYII)
+      html += `
+        <div class="flex flex-col gap-1.5">
+          <span class="text-[8px] font-bold text-cyan-400 tracking-wider font-mono uppercase block border-b border-slate-800/80 pb-0.5">💧 Red de Aguas (CYII)</span>
+          <div class="flex flex-col gap-1 pl-1">
+      `;
+
+      if (STATE.waterWasteNodes) {
+        const mainNodes = STATE.waterWasteNodes.filter(n => n.type === 'water');
+        const controlNodes = STATE.waterWasteNodes.filter(n => n.type === 'water_control');
+
+        mainNodes.forEach(node => {
+          let isAlert = false;
+          STATE.activeIncidents.forEach(inc => {
+            const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
+            if (dist < 0.02) isAlert = true;
+          });
+
+          const statusColor = isAlert ? 'bg-orange-500 glow-orange' : 'bg-cyan-500 glow-cyan';
+          const isSelected = STATE.selectedObjectId === node.id;
+          const activeClass = isSelected 
+            ? 'border-cyan-500 bg-cyan-950/20 text-cyan-300 font-bold' 
+            : 'border-slate-800/50 text-slate-400 hover:bg-slate-900/40 hover:text-slate-200';
+
+          html += `
+            <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-mono cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('water', '${node.id}')">
+              <span class="truncate flex items-center gap-1.5 w-[80%]">
+                <span class="w-1.5 h-1.5 rounded-full ${statusColor} ${isAlert ? 'animate-ping' : ''}"></span>
+                ${node.name}
+              </span>
+              <span class="text-[7.5px] uppercase font-bold ${isAlert ? 'text-orange-400' : 'text-slate-500'}">${isAlert ? 'ALERTA' : 'OK'}</span>
+            </div>
+          `;
+        });
+
+        if (controlNodes.length > 0) {
+          html += `
+            <div class="text-[7px] text-slate-500 font-mono mt-1 mb-0.5 uppercase tracking-wider pl-0.5">Telemetría y Control</div>
+          `;
+          controlNodes.forEach(node => {
+            let isAlert = false;
+            STATE.activeIncidents.forEach(inc => {
+              const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
+              if (dist < 0.02) isAlert = true;
+            });
+
+            const statusColor = isAlert ? 'bg-orange-500 glow-orange animate-pulse' : 'bg-slate-600';
+            const isSelected = STATE.selectedObjectId === node.id;
+            const activeClass = isSelected 
+              ? 'border-cyan-500 bg-cyan-950/20 text-cyan-300 font-bold' 
+              : 'border-slate-900/50 text-slate-400 hover:bg-slate-900/40 hover:text-slate-200';
+
+            html += `
+              <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9px] font-mono cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('water_control', '${node.id}')">
+                <span class="truncate flex items-center gap-1.5 w-[82%]">
+                  <span class="w-1.2 h-1.2 rounded-full ${statusColor}"></span>
+                  ${node.name}
+                </span>
+                <span class="text-[7px] font-bold ${isAlert ? 'text-orange-400' : 'text-slate-500'}">${isAlert ? 'ALERTA' : 'OK'}</span>
+              </div>
+            `;
+          });
+        }
+      }
+      
+      html += `
+          </div>
+        </div>
+      `;
+
+      // 2. Red de Residuos (Distritos)
+      html += `
+        <div class="flex flex-col gap-1.5 mt-3">
+          <span class="text-[8px] font-bold text-purple-400 tracking-wider font-mono uppercase block border-b border-slate-800/80 pb-0.5">♻️ Residuos (Distritos)</span>
+          <div class="flex flex-col gap-1 pl-1">
+      `;
+
+      if (STATE.wasteDistricts && STATE.wasteDistricts.features) {
+        // Ordenar distritos por severidad de llenado
+        const sortedFeatures = [...STATE.wasteDistricts.features].sort((a, b) => b.properties.fillLevel - a.properties.fillLevel);
+
+        sortedFeatures.forEach(f => {
+          const id = f.properties.id;
+          const name = f.properties.name;
+          const fillVal = f.properties.fillLevel;
+
+          let statusColor = 'bg-emerald-500';
+          let statusTextClass = 'text-emerald-400';
+          if (fillVal >= 80) {
+            statusColor = 'bg-purple-500 glow-purple';
+            statusTextClass = 'text-purple-400 font-bold';
+          } else if (fillVal >= 60) {
+            statusColor = 'bg-orange-500 glow-orange';
+            statusTextClass = 'text-orange-400 font-bold';
+          }
+
+          const isSelected = STATE.selectedObjectId === id;
+          const activeClass = isSelected 
+            ? 'border-purple-500 bg-purple-950/20 text-purple-300 font-bold' 
+            : 'border-slate-800/50 text-slate-400 hover:bg-slate-900/40 hover:text-slate-200';
+
+          html += `
+            <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-mono cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('district', '${id}')">
+              <span class="truncate flex items-center gap-1.5 w-[80%]">
+                <span class="w-1.5 h-1.5 rounded-full ${statusColor}"></span>
+                ${name}
+              </span>
+              <span class="text-[8px] ${statusTextClass}">${fillVal}%</span>
+            </div>
+          `;
+        });
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
     }
 
     // -------------------------------------------------------------
@@ -1897,6 +2587,7 @@
       await prepare3DMapData();
       recalculateSystemMetrics();
       renderIncidentsFeed();
+      renderAssetDirectory();
 
       // Inicializar el canvas de Deck.gl
       initDeckGLInstance();
