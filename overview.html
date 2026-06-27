@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRAGSA - Smart City Madrid Overview</title>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#03060d',
+            cardbg: 'rgba(9, 14, 26, 0.75)',
+            bordercolor: 'rgba(51, 65, 85, 0.25)',
+            neonCyan: '#00f0ff',
+            neonPurple: '#bd5bff',
+            neonGreen: '#10b981',
+            neonOrange: '#f97316',
+            neonRed: '#ef4444',
+            cyberSlate: '#94a3b8'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Apache ECharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  
+  <!-- Mapbox GL JS CDN (Requerido por Deck.gl para modo mapa base) -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+
+  <!-- Deck.gl Bundle CDN -->
+  <script src="https://unpkg.com/deck.gl@8.9.0/dist.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background-color: #03060d;
+      color: #cbd5e1;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Cuadrícula técnica de fondo */
+    .grid-bg {
+      background-image: 
+        linear-gradient(rgba(148, 163, 184, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.015) 1px, transparent 1px);
+      background-size: 30px 30px;
+      background-position: center;
+    }
+
+    /* Efecto Glassmorphic para tarjetas */
+    .scada-card {
+      background: rgba(9, 14, 26, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.25);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .scada-card:hover {
+      border-color: rgba(0, 240, 255, 0.35);
+      box-shadow: 0 8px 30px rgba(0, 240, 255, 0.06);
+    }
+
+    /* Glows y luces neón */
+    .glow-cyan { box-shadow: 0 0 15px rgba(0, 240, 255, 0.35); }
+    .glow-orange { box-shadow: 0 0 15px rgba(249, 115, 22, 0.35); }
+    .glow-green { box-shadow: 0 0 15px rgba(16, 185, 129, 0.35); }
+    .glow-red { box-shadow: 0 0 15px rgba(239, 68, 68, 0.45); }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(13, 18, 30, 0.1);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.5);
+      border-radius: 2px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 240, 255, 0.4);
+    }
+
+    /* Estilos del indicador del simulador */
+    @keyframes siren-glow {
+      0%, 100% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+      50% { border-color: rgba(239, 68, 68, 0.95); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+    }
+    .siren-active {
+      animation: siren-glow 1s infinite ease-in-out;
+    }
+
+    /* Customización de Tooltip de Deck.gl para estilo SCADA */
+    .deck-tooltip {
+      font-family: 'JetBrains Mono', monospace !important;
+      padding: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+  </style>
+</head>
+<body class="grid-bg flex h-screen w-screen select-none overflow-hidden bg-[#03060d]">
+
+  <!-- ========================================== -->
+  <!-- SIDEBAR LATERAL IZQUIERDO (80px de ancho) -->
+  <!-- ========================================== -->
+  <aside class="w-20 h-full bg-[#050811] border-r border-slate-800/60 flex flex-col justify-between py-6 items-center z-30 flex-shrink-0">
+    <!-- Logotipo / Isotipo superior -->
+    <div class="flex flex-col items-center gap-1">
+      <div class="w-10 h-10 rounded-full border border-slate-700 bg-slate-900 flex items-center justify-center shadow-[0_0_10px_rgba(0,240,255,0.15)]">
+        <span class="font-mono text-xs font-bold text-slate-300">MD</span>
+      </div>
+      <span class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mt-1">MADRID</span>
+    </div>
+    
+    <!-- Navegación central -->
+    <nav class="flex flex-col gap-6">
+      <a href="/overview.html" class="relative p-3 rounded-lg border border-cyan-500/20 bg-cyan-950/10 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.1)] transition-all duration-300" title="Smart City Overview">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      </a>
+      <a href="/index.html" class="group relative p-3 rounded-lg border border-transparent text-slate-500 hover:text-orange-400 hover:border-orange-500/20 hover:bg-orange-950/10 transition-all duration-300" title="Cerebro BESS SCADA">
+        <i data-lucide="zap" class="w-5 h-5"></i>
+      </a>
+      <div class="w-8 h-px bg-slate-800/60 my-2"></div>
+      <button class="p-3 text-slate-600 cursor-not-allowed" title="Movilidad (Módulo Transversal)" disabled>
+        <i data-lucide="car" class="w-5 h-5"></i>
+      </button>
+      <button class="p-3 text-slate-600 cursor-not-allowed" title="Agua (Módulo Transversal)" disabled>
+        <i data-lucide="droplet" class="w-5 h-5"></i>
+      </button>
+      <button class="p-3 text-slate-600 cursor-not-allowed" title="Medio Ambiente (Módulo Transversal)" disabled>
+        <i data-lucide="wind" class="w-5 h-5"></i>
+      </button>
+      <button class="p-3 text-slate-600 cursor-not-allowed" title="Residuos (Módulo Transversal)" disabled>
+        <i data-lucide="trash-2" class="w-5 h-5"></i>
+      </button>
+    </nav>
+
+    <!-- Base del sidebar: Reloj y Perfil -->
+    <div class="flex flex-col items-center gap-4">
+      <div class="text-center font-mono text-[9px] text-slate-500">
+        <span class="block font-bold text-slate-400" id="sb-clock">00:00</span>
+      </div>
+      <div class="relative w-8 h-8 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center overflow-hidden">
+        <span class="text-xs font-mono font-bold text-cyan-400">OP</span>
+        <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-slate-900"></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- MODULO PRINCIPAL (Resto de la pantalla)  -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col h-full min-w-0 p-6 overflow-hidden relative">
+    
+    <!-- 1. LA FRANJA SUPERIOR: "EL PULSÓMETRO" (KPIs Globales) - Reducido margen superior ya que quitamos cabecera -->
+    <section class="grid grid-cols-5 gap-6 mb-4 mt-2 flex-shrink-0">
+      
+      <!-- KPI 1: Movilidad -->
+      <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-movilidad">
+        <div class="flex justify-between items-start">
+          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">MOVILIDAD</span>
+          <div class="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="car" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        <div class="flex justify-between items-end mt-1">
+          <div>
+            <p class="text-2xl font-bold font-mono text-slate-100" id="val-movilidad">82%</p>
+            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Fluidez de Tráfico</p>
+          </div>
+          <!-- Sparkline de tendencia (SVG) -->
+          <div class="w-20 h-10 pb-1">
+            <svg class="w-full h-full" viewBox="0 0 100 40">
+              <defs>
+                <linearGradient id="spark-mov-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"></stop>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"></stop>
+                </linearGradient>
+              </defs>
+              <path id="sparkline-mov-path" d="M 0 25 L 15 22 L 30 28 L 45 18 L 60 12 L 75 14 L 90 8 L 100 10" fill="none" stroke="#10b981" stroke-width="1.8" />
+              <path id="sparkline-mov-area" d="M 0 25 L 15 22 L 30 28 L 45 18 L 60 12 L 75 14 L 90 8 L 100 10 L 100 40 L 0 40 Z" fill="url(#spark-mov-grad)" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Agua -->
+      <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-agua">
+        <div class="flex justify-between items-start">
+          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">AGUA (CYII)</span>
+          <div class="w-6 h-6 rounded bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="droplet" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        <div class="flex justify-between items-end mt-1">
+          <div>
+            <p class="text-lg font-bold font-mono text-slate-100" id="val-agua">1.24M m³</p>
+            <p class="text-[9px] text-cyan-400 font-mono font-medium flex items-center gap-1 mt-0.5">
+              <span class="w-1 h-1 rounded-full bg-cyan-400 animate-ping"></span> 98.4% Eficiencia
+            </p>
+          </div>
+          <div class="text-right">
+            <span class="text-[9px] font-mono text-slate-500">Red sin fugas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Medio Ambiente -->
+      <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-medioambiente">
+        <div class="flex justify-between items-start">
+          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">MEDIO AMBIENTE</span>
+          <div class="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400" id="icon-container-ma">
+            <i data-lucide="wind" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        <div class="flex justify-between items-end mt-1">
+          <div>
+            <div class="flex items-baseline gap-1">
+              <p class="text-2xl font-bold font-mono text-slate-100" id="val-ica">34</p>
+              <span class="text-[9px] font-mono text-slate-500">ICA</span>
+            </div>
+            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Calidad del Aire</p>
+          </div>
+          <div>
+            <span id="badge-medioambiente" class="px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)] animate-pulse">
+              EXCELENTE
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 4: Residuos -->
+      <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-residuos">
+        <div class="flex justify-between items-start">
+          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">RESIDUOS</span>
+          <div class="w-6 h-6 rounded bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        <div class="flex flex-col justify-end mt-1">
+          <div class="flex justify-between items-baseline mb-1">
+            <p class="text-2xl font-bold font-mono text-slate-100" id="val-residuos">42%</p>
+            <span class="text-[8.5px] font-mono text-slate-500">Llenado medio</span>
+          </div>
+          <!-- Barra de progreso miniatura -->
+          <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/80">
+            <div id="bar-residuos" class="h-full bg-purple-500 rounded-full transition-all duration-700" style="width: 42%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 5: Energía Eficiencia -->
+      <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-energia">
+        <div class="flex justify-between items-start">
+          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">ENERGÍA</span>
+          <div class="w-6 h-6 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        <div class="flex justify-between items-end mt-1">
+          <div>
+            <p class="text-lg font-bold font-mono text-slate-100" id="val-energia">78.2%</p>
+            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Generación Limpia</p>
+          </div>
+          <div class="text-right">
+            <span class="text-[9px] font-mono text-amber-400 font-medium">Red Estable</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 2. EL BLOQUE CENTRAL Y DERECHO -->
+    <section class="grid grid-cols-12 gap-6 flex-1 min-h-0">
+      
+      <!-- BLOQUE CENTRAL IZQUIERDO (Ampliado): "EL GEMELO DIGITAL" (Deck.gl 3D Map) -->
+      <div class="col-span-10 flex flex-col h-full relative scada-card overflow-hidden">
+        
+        <!-- Contenedor del Mapa -->
+        <div id="map-parent" class="w-full h-full relative bg-[#03060d]">
+          
+          <!-- Elemento DOM para el canvas de Deck.gl -->
+          <div id="deck-map-container" class="absolute inset-0 w-full h-full"></div>
+
+          <!-- CONTROLES FLOTANTES DEL MAPA (Top Right) -->
+          <div class="absolute top-4 right-4 z-20 flex flex-col gap-2.5">
+            <!-- Selector de Modo de Mapa -->
+            <div class="scada-card border-slate-700 bg-slate-950/80 px-2 py-1.5 flex items-center gap-1.5 shadow-2xl">
+              <button id="btn-mode-canvas" class="px-2 py-1 rounded text-[9.5px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] transition-all" onclick="setMapMode('canvas')">
+                DECK.GL GEMELO 3D
+              </button>
+              <button id="btn-mode-mapbox" class="px-2 py-1 rounded text-[9.5px] font-mono font-bold text-slate-500 hover:text-slate-300 transition-all" onclick="setMapMode('mapbox')">
+                MAPBOX 3D BASE
+              </button>
+            </div>
+            
+            <!-- Toggles de Capas -->
+            <div class="scada-card border-slate-700 bg-slate-950/80 p-2 flex flex-col gap-2 shadow-2xl items-end">
+              <span class="text-[8px] font-mono text-slate-500 uppercase tracking-widest mb-1 self-start pl-1">Capas Activas</span>
+              
+              <!-- Capa Tráfico -->
+              <button id="toggle-traffic" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-emerald-500/30 bg-emerald-950/15 text-emerald-400 text-xs font-mono transition-all hover:bg-emerald-950/30" onclick="toggleMapLayer('traffic')">
+                <span class="flex items-center gap-1.5"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i> TRÁFICO REGIONAL</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-green"></span>
+              </button>
+
+              <!-- Capa Agua y Residuos -->
+              <button id="toggle-waterWaste" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-cyan-500/30 bg-cyan-950/15 text-cyan-400 text-xs font-mono transition-all hover:bg-cyan-950/30" onclick="toggleMapLayer('waterWaste')">
+                <span class="flex items-center gap-1.5"><i data-lucide="droplet" class="w-3.5 h-3.5"></i> AGUA Y RESIDUOS</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 glow-cyan"></span>
+              </button>
+              
+              <!-- Capa Aire Calidad -->
+              <button id="toggle-airQuality" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('airQuality')">
+                <span class="flex items-center gap-1.5"><i data-lucide="wind" class="w-3.5 h-3.5"></i> CALIDAD DEL AIRE</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+              </button>
+
+              <!-- Capa Consumo Energía -->
+              <button id="toggle-energyGrid" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('energyGrid')">
+                <span class="flex items-center gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5"></i> CONSUMO ENERGÍA</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+              </button>
+              
+              <!-- Cámara Reset -->
+              <button class="w-full flex items-center gap-1.5 justify-center px-2 py-1 rounded border border-slate-800 bg-slate-900 text-slate-300 text-[10px] font-mono hover:border-slate-700 transition-all mt-1" onclick="resetMapCamera()">
+                <i data-lucide="navigation-2" class="w-3 h-3 rotate-45"></i> ENCUADRE REGIONAL
+              </button>
+            </div>
+          </div>
+
+          <!-- LEYENDA DEL MAPA (Bottom Right) -->
+          <div class="absolute bottom-4 right-4 z-20 scada-card border-slate-800 bg-slate-950/85 p-3 w-48 shadow-2xl pointer-events-none">
+            <h4 class="text-[9px] font-bold font-mono tracking-wider text-slate-300 uppercase mb-2 border-b border-slate-800/80 pb-1 flex items-center justify-between">
+              <span>SALA DE OPERACIONES</span>
+              <span class="text-[8px] font-normal text-slate-500">Capas Activas</span>
+            </h4>
+            <div class="space-y-2 text-[9px] font-mono">
+              <div>
+                <span class="text-[8px] font-bold text-slate-500 block mb-1">TRÁFICO VEHICULAR</span>
+                <div class="flex gap-1.5 items-center">
+                  <span class="w-2 h-1 bg-emerald-400 rounded-sm inline-block"></span> <span class="text-slate-400">Normal</span>
+                  <span class="w-2 h-1 bg-amber-400 rounded-sm inline-block"></span> <span class="text-slate-400">Denso</span>
+                  <span class="w-2 h-1 bg-red-500 rounded-sm inline-block"></span> <span class="text-slate-400">Crítico</span>
+                </div>
+              </div>
+              <div>
+                <span class="text-[8px] font-bold text-slate-500 block mb-1">INFRAESTRUCTURA DE RED</span>
+                <div class="flex gap-1.5 items-center">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span> <span class="text-slate-400">Agua/Residuos</span>
+                  <span class="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block"></span> <span class="text-slate-400">Nodo Alerta</span>
+                </div>
+              </div>
+              <div>
+                <span class="text-[8px] font-bold text-slate-500 block mb-1">CALIDAD DEL AIRE (ICA)</span>
+                <div class="flex gap-1.5 items-center">
+                  <span class="w-3.5 h-1.5 bg-gradient-to-r from-emerald-500/30 to-orange-500/40 rounded-sm inline-block"></span> <span class="text-slate-400">Neblina Zonal</span>
+                </div>
+              </div>
+              <div>
+                <span class="text-[8px] font-bold text-slate-500 block mb-1">EFICIENCIA ENERGÉTICA</span>
+                <div class="flex gap-1.5 items-center">
+                  <span class="w-3.5 h-1.5 bg-cyan-500/25 rounded-sm inline-block"></span> <span class="text-slate-400">Coropleta Municipal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONFIGURACIÓN DE TOKEN (Bottom Left) -->
+          <div class="absolute bottom-4 left-4 z-20 flex items-center gap-2" id="token-box-container">
+            <button class="w-7 h-7 rounded border border-slate-800 bg-slate-950/80 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 shadow-xl transition-all" onclick="toggleTokenSettings()" title="Ajustes de Mapbox">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+            <div id="token-settings-panel" class="hidden scada-card border-slate-800 bg-slate-950/90 p-3 shadow-2xl flex-col gap-2 w-64">
+              <h5 class="text-[10px] font-bold font-mono text-slate-300 uppercase">Configuración de Mapbox</h5>
+              <p class="text-[9px] text-slate-500 leading-normal mb-1">Para visualizar mapa base de Mapbox original en conjunto con Deck.gl, introduce tu token público.</p>
+              <input type="text" id="mapbox-token-input" placeholder="pk.eyJ1Ijo..." class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[10px] font-mono text-slate-300 focus:outline-none focus:border-cyan-500/60" />
+              <div class="flex gap-2 justify-end mt-1">
+                <button class="px-2 py-1 bg-slate-850 border border-slate-800 hover:bg-slate-800 rounded text-[9px] font-mono text-slate-400 transition-all" onclick="clearMapboxToken()">Borrar</button>
+                <button class="px-2.5 py-1 bg-cyan-950/50 border border-cyan-800 hover:bg-cyan-900/50 rounded text-[9px] font-mono text-cyan-400 transition-all font-bold" onclick="saveMapboxToken()">Guardar</button>
+              </div>
+            </div>
+            <span class="text-[9px] font-mono text-slate-600 bg-slate-950/60 px-2 py-1 rounded" id="map-status-text">Modo: Deck.gl Gemelo 3D (Sin Token)</span>
+          </div>
+
+          <!-- AVISO DE SIMULACION EN CURSO -->
+          <div id="crisis-banner" class="hidden absolute top-4 left-4 z-20 scada-card border-red-500/50 bg-red-950/20 px-4 py-2 shadow-2xl items-center gap-3 animate-pulse siren-active pointer-events-none">
+            <div class="w-2.5 h-2.5 rounded-full bg-red-500 glow-red"></div>
+            <div>
+              <h4 class="text-xs font-bold font-mono text-red-400 uppercase tracking-wider">ESTADO DE ALERTA ACTIVADO</h4>
+              <p class="text-[9px] font-mono text-slate-400">Incidentes graves reportados en el Gemelo Digital</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- BLOQUE LATERAL DERECHO (Reducido a la mitad): "LA SALA DE CONTROL" -->
+      <div class="col-span-2 flex flex-col h-full gap-6 min-h-0">
+        
+        <!-- COMPONENTE A: GRÁFICO DE SOSTENIBILIDAD (ECharts Radar) -->
+        <div class="scada-card flex flex-col p-4 h-[42%] relative overflow-hidden">
+          <!-- Decoración técnica de fondo -->
+          <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-cyan-500/5 to-transparent rounded-bl-full pointer-events-none"></div>
+          
+          <header class="flex justify-between items-start mb-2 flex-shrink-0">
+            <div>
+              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-200 uppercase">Índice Sostenibilidad Global</h3>
+              <p class="text-[9.5px] text-slate-500 font-mono mt-0.5">Pilares Transversales Smart City</p>
+            </div>
+            <!-- Score global -->
+            <div class="text-right">
+              <span class="text-lg font-bold font-mono text-cyan-400" id="sustainability-score">81.4</span>
+              <span class="text-[8.5px] font-mono text-slate-500 block">/ 100 Pts</span>
+            </div>
+          </header>
+
+          <!-- Contenedor del Gráfico -->
+          <div class="flex-1 w-full min-h-0 relative">
+            <div id="radar-chart-container" class="w-full h-full"></div>
+          </div>
+        </div>
+
+        <!-- COMPONENTE B: FEED DE EVENTOS RECIENTES -->
+        <div class="scada-card flex flex-col p-4 h-[58%] min-h-0 relative">
+          
+          <!-- Cabecera del Feed -->
+          <header class="flex justify-between items-center mb-3 flex-shrink-0 border-b border-slate-800/80 pb-2">
+            <div>
+              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-200 uppercase flex items-center gap-1.5">
+                <i data-lucide="list-collapse" class="w-4 h-4 text-cyan-400"></i> Sala de Incidentes
+              </h3>
+              <p class="text-[9px] text-slate-500 font-mono mt-0.5">Eventos y Crisis en Tiempo Real</p>
+            </div>
+            <!-- Botón Industrial de Simulación -->
+            <button class="px-2.5 py-1.5 rounded-lg border border-red-500/40 bg-red-950/20 hover:bg-red-900/30 text-red-400 text-[10px] font-mono font-bold tracking-wide transition-all shadow-[0_0_10px_rgba(239,68,68,0.1)] hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] flex items-center gap-1.5" onclick="triggerRandomIncident()">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+              SIMULAR INCIDENTE
+            </button>
+          </header>
+
+          <!-- Listado de Incidentes con Scroll -->
+          <div id="incidents-feed" class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2.5">
+            <!-- Insertado dinámicamente por JS -->
+          </div>
+
+          <!-- Totalizador en Footer -->
+          <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-800/50 flex-shrink-0 text-[9px] font-mono text-slate-500">
+            <span>Servicio de Respuesta Rápida 112 / MD</span>
+            <span class="text-slate-400 font-medium" id="incident-summary">3 Incidentes Activos</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================================== -->
+  <!-- SCRIPTS Y LÓGICA DE CONTROL (Apache ECharts, Deck.gl, etc.)   -->
+  <!-- ============================================================== -->
+  <script>
+    // -------------------------------------------------------------
+    // VARIABLES DE ESTADO Y TELEMETRÍA MOCK
+    // -------------------------------------------------------------
+    const STATE = {
+      pillars: {
+        movilidad: 82,      // Fluidación tráfico
+        agua: 98.4,         // Eficiencia de red
+        medioambiente: 88,  // Calidad aire
+        residuos: 58,       // Nivel de vaciado
+        energia: 78.2       // Generación renovable
+      },
+      icaRaw: 34,          
+      residuosFill: 42,    
+      
+      activeIncidents: [
+        {
+          id: 'inc-1',
+          time: '14:32',
+          sector: 'Movilidad',
+          title: 'Accidente M-30 Nudo Manoteras',
+          desc: 'Colisión múltiple sentido norte. Retenciones de 4.5km. Tráfico ralentizado en TripsLayer.',
+          severity: 'critical',
+          coords: [-3.670200, 40.482000],
+          pillarImpact: { movilidad: -35, medioambiente: -10 }
+        },
+        {
+          id: 'inc-2',
+          time: '14:15',
+          sector: 'Agua',
+          title: 'Fuga de Presión - Las Rozas',
+          desc: 'Rotura en tubería principal en Av. Atenas. Caída de presión. Columna 3D naranja desplegada en terreno.',
+          severity: 'warning',
+          coords: [-3.874130, 40.490710],
+          pillarImpact: { agua: -15 }
+        },
+        {
+          id: 'inc-3',
+          time: '13:58',
+          sector: 'Medio Ambiente',
+          title: 'Contaminación Barajas T4',
+          desc: 'Pico local de emisiones de Dióxido de Nitrógeno (NO2). Celda hexagonal 3D de alta densidad visible.',
+          severity: 'info',
+          coords: [-3.567990, 40.483936],
+          pillarImpact: { medioambiente: -18 }
+        }
+      ],
+
+      layers: {
+        traffic: true,
+        waterWaste: true,
+        airQuality: false,
+        energyGrid: false,
+        events: true
+      },
+
+      mapMode: 'canvas', // 'canvas' para Deck.gl puro (con Terrain y TileLayer), 'mapbox' para basemap nativo
+      mapboxToken: localStorage.getItem('mapbox_access_token') || '',
+      mapboxInitialized: false,
+      
+      // Control de ticks de animación
+      animationTime: {
+        fluid: 0,
+        slow: 0,
+        congested: 0,
+        pulse: 0
+      },
+
+      // Estructuras de datos pregeneradas en memoria
+      waterWasteNodes: null,
+      airQualityZones: null,
+      energyMunicipalities: null,
+      tripsData: null
+    };
+
+    const INCIDENT_POOL = [
+      {
+        sector: 'Movilidad',
+        title: 'Retención Extrema A-6 Las Rozas',
+        desc: 'Avería de autobús interurbano bloquea carril bus-VAO km 18. Velocidad del tráfico reducida a rojo en TripsLayer.',
+        severity: 'critical',
+        coords: [-3.875200, 40.505000],
+        pillarImpact: { movilidad: -40, medioambiente: -12 }
+      },
+      {
+        sector: 'Agua',
+        title: 'Corte programado Getafe Sector III',
+        desc: 'Actualización en la red general por Canal de Isabel II. Presión reducida detectada.',
+        severity: 'info',
+        coords: [-3.729350, 40.308100],
+        pillarImpact: { agua: -5 }
+      },
+      {
+        sector: 'Medio Ambiente',
+        title: 'Incendio Forestal en El Pardo',
+        desc: 'Foco de matorral bajo detectado por sensores térmicos. Humo incrementando polución en zona norte.',
+        severity: 'critical',
+        coords: [-3.775000, 40.520000],
+        pillarImpact: { medioambiente: -35, movilidad: -8 }
+      },
+      {
+        sector: 'Residuos',
+        title: 'Contenedores Saturados Alcalá H.',
+        desc: 'Retraso de la ruta habitual. El nivel de llenado supera los límites admisibles en centro histórico.',
+        severity: 'warning',
+        coords: [-3.364430, 40.481890],
+        pillarImpact: { residuos: -25 }
+      },
+      {
+        sector: 'Energía',
+        title: 'Demanda Crítica Subestación Barajas',
+        desc: 'Pico de consumo eléctrico aeroportuario. Compensado por batería de respaldo.',
+        severity: 'info',
+        coords: [-3.585000, 40.468000],
+        pillarImpact: { energia: -15 }
+      },
+      {
+        sector: 'Movilidad',
+        title: 'Inundación Subterráneo Plaza Castilla',
+        desc: 'Túnel de conexión cortado temporalmente. Congestión crítica en M-30 norte.',
+        severity: 'critical',
+        coords: [-3.689200, 40.466200],
+        pillarImpact: { movilidad: -30, agua: -8 }
+      }
+    ];
+
+    let radarChart = null;
+    let deckglInstance = null;
+
+    // Coordenadas de los límites geográficos de la Comunidad de Madrid
+    const madridBoundary = [
+      [-3.52, 41.05], [-3.42, 40.95], [-3.38, 40.80], [-3.25, 40.65],
+      [-3.11, 40.24], [-3.35, 40.08], [-3.59, 39.99], [-3.78, 40.12],
+      [-4.15, 40.23], [-4.40, 40.36], [-4.28, 40.55], [-4.18, 40.66],
+      [-4.12, 40.85], [-3.85, 40.95], [-3.72, 41.02], [-3.52, 41.05]
+    ];
+
+    // ViewState de la cámara virtual (Centrado en Madrid con pitch tridimensional)
+    let currentViewState = {
+      longitude: -3.703790,
+      latitude: 40.416775,
+      zoom: 9.0,
+      pitch: 52,
+      bearing: -10,
+      maxZoom: 16,
+      minZoom: 7
+    };
+
+    // -------------------------------------------------------------
+    // GENERADORES DE GEOMETRÍAS Y DATOS 3D
+    // -------------------------------------------------------------
+    
+    // Genera una elipse de coordenadas
+    function generateEllipse(cx, cy, rx, ry, startAngle = 0, ptCount = 32) {
+      const pts = [];
+      for (let i = 0; i <= ptCount; i++) {
+        const angle = startAngle + (i / ptCount) * Math.PI * 2;
+        pts.push([cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)]);
+      }
+      return pts;
+    }
+
+    // Inicializa todos los datos en memoria al arrancar
+    async function prepare3DMapData() {
+      // 1. Nodos de Agua y Residuos (Infraestructuras Críticas)
+      STATE.waterWasteNodes = [
+        { id: 'n-pc', name: 'Depósito Plaza Castilla (CYII)', type: 'water', coords: [-3.6892, 40.4662] },
+        { id: 'n-cc', name: 'Sede Central Canal Isabel II', type: 'water', coords: [-3.7045, 40.4385] },
+        { id: 'n-vm', name: 'Planta de Valdemingómez (R.S.U.)', type: 'waste', coords: [-3.605, 40.352] },
+        { id: 'n-pt', name: 'Complejo Ambiental de Pinto', type: 'waste', coords: [-3.71, 40.23] },
+        { id: 'n-cv', name: 'Depósito de Colmenar Viejo', type: 'water', coords: [-3.76, 40.67] },
+        { id: 'n-az', name: 'Embalse del Atazar (CYII Principal)', type: 'water', coords: [-3.47, 40.94] },
+        { id: 'n-vy', name: 'Embalse de Valmayor', type: 'water', coords: [-4.032, 40.548] },
+        { id: 'n-al', name: 'Punto Limpio Alcalá H.', type: 'waste', coords: [-3.364, 40.48] },
+        { id: 'n-lr', name: 'Planta Elevadora Las Rozas', type: 'water', coords: [-3.874, 40.49] }
+      ];
+
+      // 2. Zonas de Calidad del Aire (Medio Ambiente)
+      STATE.airQualityZones = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: { id: 'z-centro', name: 'Zona Centro (Metropolitana)', defaultIca: 35 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.78, 40.48], [-3.62, 40.48], [-3.62, 40.35], [-3.78, 40.35], [-3.78, 40.48]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'z-norte', name: 'Zona Sierra Norte', defaultIca: 15 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.95, 41.05], [-3.45, 41.05], [-3.62, 40.48], [-3.78, 40.48], [-3.95, 41.05]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'z-este', name: 'Zona Corredor del Henares', defaultIca: 42 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.62, 40.55], [-3.15, 40.55], [-3.15, 40.18], [-3.62, 40.18], [-3.62, 40.55]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'z-sur', name: 'Zona Urbana Sur', defaultIca: 45 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.85, 40.35], [-3.60, 40.35], [-3.60, 40.00], [-3.85, 40.00], [-3.85, 40.35]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'z-oeste', name: 'Zona Metropolitana Oeste', defaultIca: 25 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-4.35, 40.65], [-3.78, 40.65], [-3.78, 40.25], [-4.35, 40.25], [-4.35, 40.65]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'z-sierraoeste', name: 'Zona Alberche-Guadarrama', defaultIca: 20 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-4.40, 40.95], [-3.95, 40.95], [-3.78, 40.65], [-4.28, 40.55], [-4.40, 40.95]
+              ]]
+            }
+          }
+        ]
+      };
+
+      // 3. Consumo Energético Municipal (Energía)
+      STATE.energyMunicipalities = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: { id: 'm-madrid', name: 'Madrid Capital', efficiency: 82 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.75, 40.47], [-3.63, 40.47], [-3.63, 40.37], [-3.75, 40.37], [-3.75, 40.47]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-rozas', name: 'Las Rozas / Majadahonda', efficiency: 88 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.92, 40.52], [-3.82, 40.52], [-3.82, 40.45], [-3.92, 40.45], [-3.92, 40.52]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-alcobendas', name: 'Alcobendas / Sanse', efficiency: 85 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.68, 40.58], [-3.58, 40.58], [-3.58, 40.50], [-3.68, 40.50], [-3.68, 40.58]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-alcala', name: 'Alcalá de Henares', efficiency: 79 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.42, 40.52], [-3.30, 40.52], [-3.30, 40.45], [-3.42, 40.45], [-3.42, 40.52]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-torrejon', name: 'Torrejón de Ardoz', efficiency: 75 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.52, 40.50], [-3.42, 40.50], [-3.42, 40.43], [-3.52, 40.43], [-3.52, 40.50]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-getafe', name: 'Getafe / Leganés', efficiency: 81 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.78, 40.35], [-3.68, 40.35], [-3.68, 40.28], [-3.78, 40.28], [-3.78, 40.35]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-mostoles', name: 'Móstoles / Alcorcón', efficiency: 84 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.90, 40.37], [-3.78, 40.37], [-3.78, 40.30], [-3.90, 40.30], [-3.90, 40.37]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-fuenlabrada', name: 'Fuenlabrada', efficiency: 76 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.84, 40.30], [-3.74, 40.30], [-3.74, 40.22], [-3.84, 40.22], [-3.84, 40.30]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-sierranorte', name: 'Mancomunidad Sierra Norte', efficiency: 92 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.90, 41.02], [-3.40, 41.02], [-3.40, 40.75], [-3.90, 40.75], [-3.90, 41.02]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-guadarrama', name: 'Comarca de Guadarrama', efficiency: 89 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-4.10, 40.75], [-3.85, 40.75], [-3.85, 40.55], [-4.10, 40.55], [-4.10, 40.75]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-vegas', name: 'Comarca de Las Vegas', efficiency: 83 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.40, 40.15], [-3.15, 40.15], [-3.25, 39.99], [-3.50, 39.99], [-3.40, 40.15]
+              ]]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { id: 'm-pardo', name: 'El Pardo (Reserva)', efficiency: 95 },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [-3.85, 40.60], [-3.70, 40.60], [-3.70, 40.48], [-3.85, 40.48], [-3.85, 40.60]
+              ]]
+            }
+          }
+        ]
+      };
+
+      // 4. Trazas para TripsLayer (Tráfico) desde carreteras reales
+      try {
+        const response = await fetch('/madrid_roads.geojson');
+        if (!response.ok) {
+          throw new Error('No se pudo cargar el archivo de carreteras reales.');
+        }
+        const geojson = await response.json();
+        
+        const trips = [];
+        geojson.features.forEach((feature) => {
+          const path = feature.geometry.coordinates;
+          if (!path || path.length < 2) return;
+          
+          const name = feature.properties.name || feature.properties.ref || "Vía Urbana";
+          const type = feature.properties.highway;
+          
+          // Calcular la longitud en grados aproximados
+          let totalLen = 0;
+          for (let i = 0; i < path.length - 1; i++) {
+            totalLen += Math.hypot(path[i+1][0] - path[i][0], path[i+1][1] - path[i][1]);
+          }
+          
+          // Escala de velocidad/duración: si es motorway es más rápida (menos segundos para el mismo largo)
+          // Limitamos la duración máxima a 450 para garantizar que sea menor que el ciclo de loop global (500)
+          let speedFactor = 2800; // default for secondary/tertiary
+          if (type === 'motorway') speedFactor = 1200;
+          else if (type === 'trunk') speedFactor = 1500;
+          else if (type === 'primary') speedFactor = 2000;
+          else if (type === 'secondary') speedFactor = 2500;
+          else if (type === 'residential') speedFactor = 3800;
+          
+          const duration = Math.max(120, Math.min(450, totalLen * speedFactor));
+          
+          // Asignar estado por defecto (Normal, Denso, Crítico)
+          const rVal = Math.random();
+          let defaultState = 'fluid';
+          if (rVal < 0.12) {
+            defaultState = 'congested'; // Rojo
+          } else if (rVal < 0.30) {
+            defaultState = 'slow'; // Amarillo
+          }
+          
+          // Generamos tiempos relativos de timestamps para el TripsLayer
+          const relativeTimes = [0];
+          let curr = 0;
+          const segTotal = totalLen || 1;
+          for (let i = 0; i < path.length - 1; i++) {
+            const len = Math.hypot(path[i+1][0] - path[i][0], path[i+1][1] - path[i][1]);
+            relativeTimes.push(((curr + len) / segTotal) * duration);
+            curr += len;
+          }
+          
+          // Probabilidad de spawn y factor de espaciado según la importancia de la vía
+          let spawnProbability = 1.0;
+          let spacingFactor = 1.6; // secondary
+          
+          if (type === 'motorway' || type === 'trunk') {
+            spacingFactor = 0.5; // continuo denso
+          } else if (type === 'primary') {
+            spacingFactor = 0.8; // fluido
+          } else if (type === 'tertiary') {
+            spacingFactor = 2.4; 
+            spawnProbability = 0.7; // 70% de calles terciarias tienen tráfico activo
+          } else if (type === 'residential') {
+            spacingFactor = 3.6;
+            spawnProbability = 0.3; // 30% de calles residenciales largas tienen tráfico activo
+          }
+          
+          if (Math.random() <= spawnProbability) {
+            // N: número de vehículos para cubrir el ciclo global de 500 de forma perfectamente periódica
+            const targetSpacing = duration * spacingFactor;
+            const N = Math.max(1, Math.round(500 / targetSpacing));
+            const spacing = 500 / N;
+            
+            // Desfase aleatorio único por carretera para desincronizar los flujos entre calles
+            const roadOffset = Math.random() * spacing;
+            
+            for (let i = 0; i < N; i++) {
+              const startTime = roadOffset + i * spacing;
+              const timestamps = relativeTimes.map(t => t + startTime);
+              
+              trips.push({
+                path: path,
+                timestamps: timestamps,
+                roadName: name,
+                defaultState: defaultState
+              });
+              
+              // Si el viaje cruza el límite de la animación (500), duplicamos el viaje 
+              // con un desfase de -500 para lograr una transición 100% fluida (seamless wrap-around)
+              if (startTime + duration > 500) {
+                const shiftedTimestamps = timestamps.map(t => t - 500);
+                trips.push({
+                  path: path,
+                  timestamps: shiftedTimestamps,
+                  roadName: name,
+                  defaultState: defaultState
+                });
+              }
+            }
+          }
+        });
+        
+        STATE.tripsData = trips;
+      } catch (err) {
+        console.error("Error al cargar GeoJSON de carreteras:", err);
+        STATE.tripsData = [];
+      }
+    }
+
+    // -------------------------------------------------------------
+    // MOTOR DE COMPORTAMIENTO DE LA INTERFAZ (UI)
+    // -------------------------------------------------------------
+    function startClocks() {
+      const sbClock = document.getElementById('sb-clock');
+      const mainTimer = document.getElementById('main-timer');
+      function update() {
+        const now = new Date();
+        if (sbClock) sbClock.textContent = now.toTimeString().split(' ')[0].substring(0, 5);
+        if (mainTimer) mainTimer.textContent = now.toLocaleTimeString('en-US', { hour12: true });
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    function updateKPIWidgets() {
+      // Movilidad
+      document.getElementById('val-movilidad').textContent = `${Math.round(STATE.pillars.movilidad)}%`;
+      
+      // Agua
+      const valAgua = document.getElementById('val-agua');
+      const effAgua = STATE.pillars.agua.toFixed(1);
+      valAgua.textContent = `${(1.24 * (STATE.pillars.agua / 98.4)).toFixed(2)}M m³`;
+      valAgua.nextElementSibling.innerHTML = `<span class="w-1 h-1 rounded-full bg-cyan-400 animate-ping"></span> ${effAgua}% Eficiencia`;
+      
+      // ICA
+      const icaVal = Math.round(150 - (STATE.pillars.medioambiente * 1.3));
+      document.getElementById('val-ica').textContent = icaVal;
+      
+      const badgeMA = document.getElementById('badge-medioambiente');
+      const iconMA = document.getElementById('icon-container-ma');
+      
+      if (icaVal <= 50) {
+        badgeMA.textContent = 'EXCELENTE';
+        badgeMA.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)]';
+        iconMA.className = 'w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400';
+      } else if (icaVal <= 100) {
+        badgeMA.textContent = 'MODERADO';
+        badgeMA.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-amber-500/10 border border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.15)]';
+        iconMA.className = 'w-6 h-6 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400';
+      } else {
+        badgeMA.textContent = 'PRE-ALERTA';
+        badgeMA.className = 'px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-orange-500/10 border border-orange-500/40 text-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.2)] animate-pulse';
+        iconMA.className = 'w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400';
+      }
+
+      // Residuos
+      const fillResiduos = Math.round(100 - STATE.pillars.residuos * 1.0);
+      document.getElementById('val-residuos').textContent = `${fillResiduos}%`;
+      const barResiduos = document.getElementById('bar-residuos');
+      barResiduos.style.width = `${fillResiduos}%`;
+      if (fillResiduos > 75) {
+        barResiduos.className = 'h-full bg-red-500 rounded-full transition-all';
+      } else if (fillResiduos > 50) {
+        barResiduos.className = 'h-full bg-amber-500 rounded-full transition-all';
+      } else {
+        barResiduos.className = 'h-full bg-purple-500 rounded-full transition-all';
+      }
+
+      // Energía
+      document.getElementById('val-energia').textContent = `${STATE.pillars.energia.toFixed(1)}%`;
+      
+      // Banner
+      const hasCritical = STATE.activeIncidents.some(i => i.severity === 'critical');
+      const crisisBanner = document.getElementById('crisis-banner');
+      if (hasCritical) {
+        crisisBanner.classList.remove('hidden');
+        crisisBanner.classList.add('flex');
+      } else {
+        crisisBanner.classList.add('hidden');
+        crisisBanner.classList.remove('flex');
+      }
+    }
+
+    function calculateSustainabilityScore() {
+      const values = Object.values(STATE.pillars);
+      const sum = values.reduce((a, b) => a + b, 0);
+      const avg = sum / values.length;
+      document.getElementById('sustainability-score').textContent = avg.toFixed(1);
+      return avg;
+    }
+
+    // -------------------------------------------------------------
+    // GRÁFICO DE ARAÑA: APACHE ECHARTS RADAR
+    // -------------------------------------------------------------
+    function initRadarChart() {
+      const chartDom = document.getElementById('radar-chart-container');
+      radarChart = echarts.init(chartDom);
+      updateRadarChart();
+      window.addEventListener('resize', () => {
+        if (radarChart) radarChart.resize();
+      });
+    }
+
+    function updateRadarChart() {
+      if (!radarChart) return;
+      const option = {
+        color: ['#00f0ff'],
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: 'rgba(9, 14, 26, 0.9)',
+          borderColor: 'rgba(0, 240, 255, 0.3)',
+          textStyle: { color: '#cbd5e1', fontFamily: 'JetBrains Mono', fontSize: 9 }
+        },
+        radar: {
+          indicator: [
+            { name: 'Movilidad', max: 100 },
+            { name: 'Gestión de Agua', max: 100 },
+            { name: 'Calidad del Aire', max: 100 },
+            { name: 'Gestión Residuos', max: 100 },
+            { name: 'Eficiencia Energética', max: 100 }
+          ],
+          shape: 'polygon',
+          radius: '68%',
+          center: ['50%', '52%'],
+          axisName: {
+            color: '#94a3b8',
+            fontFamily: 'JetBrains Mono',
+            fontSize: 9,
+            fontWeight: 500,
+            formatter: (value) => value.toUpperCase()
+          },
+          splitArea: {
+            show: true,
+            areaStyle: {
+              color: [
+                'rgba(15, 23, 42, 0.45)',
+                'rgba(15, 23, 42, 0.3)',
+                'rgba(15, 23, 42, 0.15)',
+                'rgba(15, 23, 42, 0.05)',
+                'rgba(0, 0, 0, 0)'
+              ]
+            }
+          },
+          splitLine: { lineStyle: { color: 'rgba(51, 65, 85, 0.25)', width: 1 } },
+          axisLine: { lineStyle: { color: 'rgba(51, 65, 85, 0.3)' } }
+        },
+        series: [{
+          name: 'Índice de Sostenibilidad',
+          type: 'radar',
+          data: [{
+            value: [
+              STATE.pillars.movilidad,
+              STATE.pillars.agua,
+              STATE.pillars.medioambiente,
+              STATE.pillars.residuos,
+              STATE.pillars.energia
+            ],
+            name: 'Capacidad Operativa',
+            symbol: 'circle',
+            symbolSize: 5,
+            lineStyle: { width: 2, color: '#00f0ff', shadowColor: '#00f0ff', shadowBlur: 10 },
+            itemStyle: { color: '#00f0ff' },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [
+                { offset: 0, color: 'rgba(0, 240, 255, 0.45)' },
+                { offset: 1, color: 'rgba(189, 91, 255, 0.15)' }
+              ])
+            }
+          }]
+        }]
+      };
+      radarChart.setOption(option);
+    }
+
+    function recalculateSystemMetrics() {
+      STATE.pillars.movilidad = 82;
+      STATE.pillars.agua = 98.4;
+      STATE.pillars.medioambiente = 88;
+      STATE.pillars.residuos = 58;
+      STATE.pillars.energia = 78.2;
+
+      STATE.activeIncidents.forEach(inc => {
+        if (inc.pillarImpact) {
+          for (let p in inc.pillarImpact) {
+            if (STATE.pillars[p] !== undefined) {
+              STATE.pillars[p] = Math.max(5, Math.min(100, STATE.pillars[p] + inc.pillarImpact[p]));
+            }
+          }
+        }
+      });
+
+      updateKPIWidgets();
+      calculateSustainabilityScore();
+      updateRadarChart();
+    }
+
+    // -------------------------------------------------------------
+    // SALA DE INCIDENTES: FEED DE CRISIS
+    // -------------------------------------------------------------
+    function renderIncidentsFeed() {
+      const feedContainer = document.getElementById('incidents-feed');
+      const countLabel = document.getElementById('incident-summary');
+      feedContainer.innerHTML = '';
+      countLabel.textContent = `${STATE.activeIncidents.length} Incidentes Activos`;
+      
+      if (STATE.activeIncidents.length === 0) {
+        feedContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-full text-slate-500 py-12 gap-2">
+            <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-400/60"></i>
+            <span class="text-xs font-mono">Sin incidencias reportadas. Región Estable.</span>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+      
+      STATE.activeIncidents.forEach((inc) => {
+        let borderClass = 'border-slate-800 hover:border-slate-700 bg-slate-950/20';
+        let badgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        
+        if (inc.severity === 'critical') {
+          borderClass = 'border-red-500/30 hover:border-red-500/60 bg-red-950/5';
+          badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30 glow-red';
+        } else if (inc.severity === 'warning') {
+          borderClass = 'border-orange-500/30 hover:border-orange-500/60 bg-orange-950/5';
+          badgeClass = 'bg-orange-500/15 text-orange-400 border-orange-500/30 glow-orange';
+        }
+        
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-lg border flex flex-col justify-between gap-2 cursor-pointer transition-all duration-300 ${borderClass}`;
+        card.onclick = (e) => {
+          if (e.target.closest('.btn-resolve-incident')) return;
+          focusOnCoordinates(inc.coords);
+        };
+        
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-2">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="px-1.5 py-0.5 rounded text-[8px] font-mono border font-semibold ${badgeClass}">
+                ${inc.sector.toUpperCase()}
+              </span>
+              <h4 class="text-xs font-bold text-slate-200 truncate font-mono">${inc.title}</h4>
+            </div>
+            <span class="text-[9px] font-mono text-slate-500 whitespace-nowrap">${inc.time}</span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-sans leading-relaxed">${inc.desc}</p>
+          <div class="flex justify-between items-center mt-1 border-t border-slate-900/60 pt-2">
+            <span class="text-[8px] font-mono text-slate-500 flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3 h-3 text-cyan-400"></i> Column 3D: ${inc.coords[1].toFixed(4)}, ${inc.coords[0].toFixed(4)}
+            </span>
+            <button class="btn-resolve-incident px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 text-[9px] font-mono hover:bg-emerald-900/40 transition-all" onclick="resolveIncident('${inc.id}')">
+              RESOLVER
+            </button>
+          </div>
+        `;
+        feedContainer.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function resolveIncident(id) {
+      STATE.activeIncidents = STATE.activeIncidents.filter(inc => inc.id !== id);
+      recalculateSystemMetrics();
+      renderIncidentsFeed();
+      resetMapCamera();
+    }
+
+    function triggerRandomIncident() {
+      const raw = INCIDENT_POOL[Math.floor(Math.random() * INCIDENT_POOL.length)];
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+      
+      const newInc = {
+        ...raw,
+        id: `inc-${Date.now()}`,
+        time: timeStr
+      };
+
+      // Pequeño desfase aleatorio para no sobreponer exactamente columnas
+      newInc.coords = [
+        newInc.coords[0] + (Math.random() - 0.5) * 0.04,
+        newInc.coords[1] + (Math.random() - 0.5) * 0.04
+      ];
+      
+      STATE.activeIncidents.unshift(newInc);
+      
+      // Flash rojo de alarma
+      const flash = document.createElement('div');
+      flash.className = 'absolute inset-0 bg-red-500/10 pointer-events-none z-50 transition-opacity duration-300';
+      document.body.appendChild(flash);
+      setTimeout(() => {
+        flash.style.opacity = 0;
+        setTimeout(() => flash.remove(), 300);
+      }, 200);
+
+      recalculateSystemMetrics();
+      renderIncidentsFeed();
+      
+      // FlyTo automático
+      focusOnCoordinates(newInc.coords);
+    }
+
+    // -------------------------------------------------------------
+    // MOTOR DE INTEGRACIÓN DE DECK.GL (WebGL2)
+    // -------------------------------------------------------------
+    
+    // Toggles de Capas
+    function toggleMapLayer(layer) {
+      STATE.layers[layer] = !STATE.layers[layer];
+      const btn = document.getElementById(`toggle-${layer}`);
+      if (!btn) return;
+      const indicator = btn.querySelector('span:last-child');
+      if (!indicator) return;
+      
+      if (STATE.layers[layer]) {
+        let col = layer === 'traffic' ? 'emerald' : layer === 'waterWaste' ? 'cyan' : layer === 'airQuality' ? 'emerald' : 'amber';
+        let glow = layer === 'traffic' ? 'green' : layer === 'waterWaste' ? 'cyan' : layer === 'airQuality' ? 'green' : 'orange';
+        btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-${col}-500/30 bg-${col}-950/15 text-${col}-400 text-xs font-mono transition-all hover:bg-${col}-950/30`;
+        indicator.className = `w-1.5 h-1.5 rounded-full bg-${col}-400 glow-${glow}`;
+      } else {
+        btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30`;
+        indicator.className = 'w-1.5 h-1.5 rounded-full bg-slate-700';
+      }
+    }
+
+    // FlyTo de cámara virtual en Deck.gl
+    function focusOnCoordinates(coords) {
+      currentViewState = {
+        ...currentViewState,
+        longitude: coords[0],
+        latitude: coords[1],
+        zoom: 12.0,
+        pitch: 58,
+        bearing: -15,
+        transitionDuration: 2500,
+        transitionInterpolator: new deck.FlyToInterpolator()
+      };
+      if (deckglInstance) {
+        deckglInstance.setProps({ viewState: currentViewState });
+      }
+    }
+
+    function resetMapCamera() {
+      currentViewState = {
+        ...currentViewState,
+        longitude: -3.703790,
+        latitude: 40.416775,
+        zoom: 9.0,
+        pitch: 52,
+        bearing: -10,
+        transitionDuration: 2500,
+        transitionInterpolator: new deck.FlyToInterpolator()
+      };
+      if (deckglInstance) {
+        deckglInstance.setProps({ viewState: currentViewState });
+      }
+    }
+
+    // Control de la configuración del Token de Mapbox
+    function toggleTokenSettings() {
+      const panel = document.getElementById('token-settings-panel');
+      const isHidden = panel.classList.contains('hidden');
+      if (isHidden) {
+        panel.classList.remove('hidden');
+        panel.classList.add('flex');
+        document.getElementById('mapbox-token-input').value = STATE.mapboxToken;
+      } else {
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+      }
+    }
+
+    function saveMapboxToken() {
+      const token = document.getElementById('mapbox-token-input').value.trim();
+      if (token) {
+        localStorage.setItem('mapbox_access_token', token);
+        STATE.mapboxToken = token;
+        toggleTokenSettings();
+        initDeckGLInstance(); // Re-inicializar con soporte de Mapbox base
+      } else {
+        alert("Por favor, introduce un token de Mapbox válido.");
+      }
+    }
+
+    function clearMapboxToken() {
+      localStorage.removeItem('mapbox_access_token');
+      STATE.mapboxToken = '';
+      document.getElementById('mapbox-token-input').value = '';
+      toggleTokenSettings();
+      initDeckGLInstance(); // Regresar a modo Deck.gl puro sin token
+    }
+
+    function setMapMode(mode) {
+      STATE.mapMode = mode;
+      const btnCanvas = document.getElementById('btn-mode-canvas');
+      const btnMapbox = document.getElementById('btn-mode-mapbox');
+      const statusText = document.getElementById('map-status-text');
+
+      if (mode === 'mapbox') {
+        if (!STATE.mapboxToken) {
+          alert("No se ha configurado un Token de Mapbox. Por favor, introduce uno en el panel de la izquierda para usar este basemap.");
+          toggleTokenSettings();
+          setMapMode('canvas');
+          return;
+        }
+        btnMapbox.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] transition-all';
+        btnCanvas.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold text-slate-500 hover:text-slate-300 transition-all';
+        statusText.textContent = "Modo: Mapbox 3D Base";
+        initDeckGLInstance();
+      } else {
+        btnCanvas.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] transition-all';
+        btnMapbox.className = 'px-2 py-1 rounded text-[9.5px] font-mono font-bold text-slate-500 hover:text-slate-300 transition-all';
+        statusText.textContent = "Modo: Deck.gl Gemelo 3D (Sin Token)";
+        initDeckGLInstance();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // CONSTRUCCIÓN E INSTANCIACIÓN DEL MAPA DECK.GL
+    // -------------------------------------------------------------
+    function initDeckGLInstance() {
+      // Destruir instancia anterior si existe
+      if (deckglInstance) {
+        deckglInstance.finalize();
+        deckglInstance = null;
+      }
+      
+      // Limpiar contenedor
+      document.getElementById('deck-map-container').innerHTML = '';
+
+      // Luces y sombras tridimensionales físicas
+      const ambientLight = new deck.AmbientLight({
+        color: [255, 255, 255],
+        intensity: 0.95
+      });
+      const directionalLight = new deck.DirectionalLight({
+        color: [255, 255, 255],
+        intensity: 1.6,
+        direction: [-3, -9, -1],
+        _shadow: true
+      });
+      const lightingEffect = new deck.LightingEffect({ ambientLight, directionalLight });
+
+      const deckProps = {
+        viewState: currentViewState,
+        onViewStateChange: ({viewState}) => {
+          currentViewState = viewState;
+          deckglInstance.setProps({ viewState: currentViewState });
+        },
+        controller: true,
+        effects: [lightingEffect],
+        getTooltip: ({object}) => {
+          if (!object) return null;
+          
+          // 1. Hover en un Nodo de Agua/Residuos (ScatterplotLayer)
+          if (object.name && object.status) {
+            let badgeColor = object.status.includes('Alerta') ? 'text-red-400 font-bold animate-pulse' : 'text-cyan-400';
+            return {
+              html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 200px;">
+                       <strong class="text-xs font-mono text-cyan-400 block border-b border-slate-850 pb-1 mb-1">${object.name}</strong>
+                       <p class="font-mono">Tipo: ${object.type === 'water' ? 'Hídrica (CYII)' : 'Gestión Residuos'}</p>
+                       <p class="font-mono">Estado: <span class="${badgeColor}">${object.status}</span></p>
+                     </div>`
+            };
+          }
+
+          // 2. Hover en un prisma de Alerta 3D (ColumnLayer)
+          if (object.title) {
+            let colText = 'text-cyan-400';
+            if (object.color[0] > 200) {
+              colText = object.color[1] < 100 ? 'text-red-400' : 'text-orange-400';
+            }
+            return {
+              html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 220px;">
+                       <strong class="text-xs font-mono ${colText} block border-b border-slate-850 pb-1 mb-1">${object.title}</strong>
+                       <p class="mb-1 leading-normal text-slate-400">${object.desc}</p>
+                       <div class="text-[8.5px] font-mono text-slate-500 border-t border-slate-900/60 pt-1 mt-1">
+                         Pos: ${object.position[1].toFixed(4)}, ${object.position[0].toFixed(4)}
+                       </div>
+                     </div>`
+            };
+          }
+
+          // 3. Hover en una Zona de Calidad del Aire (GeoJsonLayer)
+          if (object.properties && object.properties.defaultIca !== undefined) {
+            let icaVal = object.properties.ica;
+            let statusText = object.properties.status;
+            let colorClass = icaVal > 80 ? 'text-orange-400 font-bold' : (icaVal > 50 ? 'text-yellow-400' : 'text-emerald-400');
+            return {
+              html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px;">
+                       <strong class="text-xs font-mono text-emerald-400 block border-b border-slate-850 pb-1 mb-1">${object.properties.name}</strong>
+                       <p class="font-mono">Índice Calidad Aire (ICA): <span class="${colorClass}">${icaVal}</span></p>
+                       <p class="font-mono">Atmósfera: <span class="${colorClass}">${statusText}</span></p>
+                     </div>`
+            };
+          }
+
+          // 4. Hover en un Municipio de Energía (GeoJsonLayer)
+          if (object.properties && object.properties.efficiency !== undefined) {
+            let eff = object.properties.efficiency;
+            return {
+              html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px;">
+                       <strong class="text-xs font-mono text-amber-400 block border-b border-slate-850 pb-1 mb-1">${object.properties.name}</strong>
+                       <p class="font-mono">Eficiencia Energética: <span class="text-cyan-400 font-bold">${eff}%</span></p>
+                       <p class="text-[8px] text-slate-500 mt-1">Ahorro en Alumbrado Municipal</p>
+                     </div>`
+            };
+          }
+
+          return null;
+        },
+        layers: []
+      };
+
+      // Si tenemos token y estamos en modo mapbox, usar DeckGL (que monta Mapbox nativo en el fondo)
+      if (STATE.mapboxToken && STATE.mapMode === 'mapbox') {
+        deckProps.container = 'deck-map-container';
+        deckProps.mapboxApiAccessToken = STATE.mapboxToken;
+        deckProps.mapStyle = 'mapbox://styles/mapbox/dark-v11';
+        deckglInstance = new deck.DeckGL(deckProps);
+      } else {
+        // Modo puro Deck.gl (sin Mapbox en absoluto, sin logo, robusto)
+        // Usamos la clase deck.Deck base vinculada a una etiqueta div para evitar que intente montar Mapbox
+        deckProps.parent = document.getElementById('deck-map-container');
+        deckglInstance = new deck.Deck(deckProps);
+      }
+      
+      // Limpiar cache de capas estáticas al re-inicializar
+      cachedStaticLayers = null;
+      updateDeckLayers();
+    }
+
+    // Cache local para capas estáticas que no cambian fotograma a fotograma
+    // Esto optimiza drásticamente el rendimiento al no re-calcular triangulaciones 3D 60 veces por segundo
+    let cachedStaticLayers = null;
+
+    function getStaticLayers() {
+      if (cachedStaticLayers) return cachedStaticLayers;
+
+      const layers = [];
+
+      // 1. CAPA DE MAPA BASE VECTORIAL (TileLayer) - Solo si no usamos Mapbox nativo
+      if (!STATE.mapboxToken || STATE.mapMode === 'canvas') {
+        layers.push(new deck.TileLayer({
+          id: 'basemap-tile-layer',
+          data: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+          minZoom: 0,
+          maxZoom: 20,
+          tileSize: 256,
+          maxRequests: 20,              // Mayor número de peticiones concurrentes (HTTP/2 multiplexing)
+          maxCacheSize: 150,            // Cachear más azulejos en memoria local para evitar recargas constantes al arrastrar
+          debounceTime: 100,            // Evitar disparar peticiones intermedias durante zoom/pan rápidos
+          extent: [-4.6, 39.8, -3.0, 41.2], // Limitar a la Comunidad de Madrid para no descargar zonas irrelevantes
+          refinementStrategy: 'best-available', // Utilizar tiles de otros niveles de zoom mientras se descargan las nuevas
+          renderSubLayers: props => {
+            const {
+              bbox: {west, south, east, north}
+            } = props.tile;
+
+            return new deck.BitmapLayer(props, {
+              data: null,
+              image: props.data,
+              bounds: [west, south, east, north]
+            });
+          }
+        }));
+
+        // 2. CONTORNO DE LA COMUNIDAD DE MADRID (GeoJsonLayer) - Brillo neón cian
+        layers.push(new deck.GeoJsonLayer({
+          id: 'madrid-boundary-layer',
+          data: {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [madridBoundary]
+            },
+            properties: { name: 'Comunidad de Madrid' }
+          },
+          filled: true,
+          stroked: true,
+          getFillColor: [13, 22, 45, 60], // azul translúcido
+          getLineColor: [0, 240, 255, 140], // cian brillante neón para el borde
+          getLineWidth: 2,
+          lineWidthMinPixels: 2
+        }));
+      }
+
+      cachedStaticLayers = layers;
+      return cachedStaticLayers;
+    }
+
+    function getDynamicLayers() {
+      const layers = [];
+
+      // 1. CAPA DE TRÁFICO DINÁMICO EN MOVIMIENTO (TripsLayer)
+      if (STATE.layers.traffic) {
+        const fluidVehicles = [];
+        const slowVehicles = [];
+        const congestedVehicles = [];
+
+        STATE.tripsData.forEach(trip => {
+          let state = trip.defaultState;
+          
+          // Verificar si hay algún incidente cerca de la traza
+          STATE.activeIncidents.forEach(inc => {
+            const incCoords = inc.coords;
+            trip.path.forEach(pt => {
+              const dist = Math.hypot(pt[0] - incCoords[0], pt[1] - incCoords[1]);
+              if (dist < 0.018) { // Si está a menos de ~1.8km del incidente
+                if (inc.severity === 'critical') {
+                  state = 'congested';
+                } else if (inc.severity === 'warning' && state !== 'congested') {
+                  state = 'slow';
+                }
+              }
+            });
+          });
+
+          if (state === 'congested') {
+            congestedVehicles.push(trip);
+          } else if (state === 'slow') {
+            slowVehicles.push(trip);
+          } else {
+            fluidVehicles.push(trip);
+          }
+        });
+
+        // Hilos rápidos (Verde/Turquesa suave y agradable - Flujo Normal)
+        layers.push(new deck.TripsLayer({
+          id: 'traffic-trips-fluid',
+          data: fluidVehicles,
+          getPath: d => d.path,
+          getTimestamps: d => d.timestamps,
+          getColor: [80, 200, 180], // Turquesa suave
+          opacity: 0.8,
+          widthMinPixels: 2.0,
+          rounded: true,
+          trailLength: 45,
+          currentTime: STATE.animationTime.fluid
+        }));
+
+        // Hilos intermedios (Amarillo denso)
+        layers.push(new deck.TripsLayer({
+          id: 'traffic-trips-slow',
+          data: slowVehicles,
+          getPath: d => d.path,
+          getTimestamps: d => d.timestamps,
+          getColor: [250, 200, 10], // Amarillo
+          opacity: 0.9,
+          widthMinPixels: 2.5,
+          rounded: true,
+          trailLength: 45,
+          currentTime: STATE.animationTime.slow
+        }));
+
+        // Hilos lentos (Rojo crítico)
+        layers.push(new deck.TripsLayer({
+          id: 'traffic-trips-congested',
+          data: congestedVehicles,
+          getPath: d => d.path,
+          getTimestamps: d => d.timestamps,
+          getColor: [240, 50, 50], // Rojo
+          opacity: 1.0,
+          widthMinPixels: 3.0,
+          rounded: true,
+          trailLength: 45,
+          currentTime: STATE.animationTime.congested
+        }));
+      }
+
+      // 2. CAPA DE INFRAESTRUCTURA HÍDRICA Y RESIDUOS (ScatterplotLayer)
+      if (STATE.layers.waterWaste) {
+        const nodesData = [];
+        const wavesData = [];
+        const pulse = STATE.animationTime.pulse || 0;
+
+        STATE.waterWasteNodes.forEach(node => {
+          let alertState = false;
+          STATE.activeIncidents.forEach(inc => {
+            const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
+            if (dist < 0.02) { 
+              alertState = true;
+            }
+          });
+
+          if (alertState) {
+            nodesData.push({
+              position: node.coords,
+              color: [240, 50, 50, 220], 
+              radius: 350,
+              name: node.name,
+              type: node.type,
+              status: 'Alerta Activa'
+            });
+            wavesData.push({
+              position: node.coords,
+              color: [240, 50, 50, Math.max(0, (1 - pulse) * 160)], 
+              radius: 350 + pulse * 1400 
+            });
+          } else {
+            nodesData.push({
+              position: node.coords,
+              color: [0, 200, 255, 120], 
+              radius: 250,
+              name: node.name,
+              type: node.type,
+              status: 'Operativo'
+            });
+          }
+        });
+
+        layers.push(new deck.ScatterplotLayer({
+          id: 'water-waste-nodes',
+          data: nodesData,
+          getPosition: d => d.position,
+          getFillColor: d => d.color,
+          getRadius: d => d.radius,
+          pickable: true,
+          radiusMinPixels: 4,
+          radiusMaxPixels: 15
+        }));
+
+        if (wavesData.length > 0) {
+          layers.push(new deck.ScatterplotLayer({
+            id: 'water-waste-waves',
+            data: wavesData,
+            getPosition: d => d.position,
+            getFillColor: d => d.color,
+            getRadius: d => d.radius,
+            stroked: true,
+            filled: false,
+            getLineColor: d => d.color,
+            getLineWidth: 2,
+            lineWidthMinPixels: 1
+          }));
+        }
+      }
+
+      // 3. CAPA DE CALIDAD DEL AIRE ATMOSFÉRICA (Zonal GeoJsonLayer translúcida)
+      if (STATE.layers.airQuality) {
+        const zonesGeoJson = {
+          type: 'FeatureCollection',
+          features: STATE.airQualityZones.features.map(f => {
+            let ica = f.properties.defaultIca;
+            STATE.activeIncidents.forEach(inc => {
+              const firstPt = f.geometry.coordinates[0][0];
+              const dist = Math.hypot(firstPt[0] - inc.coords[0], firstPt[1] - inc.coords[1]);
+              if (dist < 0.1) { 
+                ica += 50; 
+              }
+            });
+
+            let color = [16, 185, 129, 20]; // Verde/Azul muy sutil para excelente
+            let status = 'Excelente';
+            if (ica > 80) {
+              color = [249, 115, 22, 40]; // Naranja sutil
+              status = 'Inversión Térmica / Moderado';
+            } else if (ica > 50) {
+              color = [250, 200, 10, 30]; // Amarillo
+              status = 'Regular';
+            }
+
+            return {
+              ...f,
+              properties: {
+                ...f.properties,
+                ica: ica,
+                color: color,
+                status: status
+              }
+            };
+          })
+        };
+
+        layers.push(new deck.GeoJsonLayer({
+          id: 'air-quality-zones-layer',
+          data: zonesGeoJson,
+          filled: true,
+          stroked: true,
+          getFillColor: f => f.properties.color,
+          getLineColor: [0, 240, 255, 30], 
+          getLineWidth: 1,
+          lineWidthMinPixels: 0.5,
+          pickable: true
+        }));
+      }
+
+      // 4. CAPA DE CONSUMO ENERGÉTICO POR ZONAS (Coropleta Municipal)
+      if (STATE.layers.energyGrid) {
+        layers.push(new deck.GeoJsonLayer({
+          id: 'energy-municipalities-layer',
+          data: STATE.energyMunicipalities,
+          filled: true,
+          stroked: true,
+          getFillColor: f => {
+            const eff = f.properties.efficiency;
+            if (eff >= 90) return [16, 185, 129, 45]; // Verde
+            if (eff >= 80) return [6, 182, 212, 40];  // Cian
+            return [245, 158, 11, 35]; // Ámbar
+          },
+          getLineColor: [51, 65, 85, 80], 
+          getLineWidth: 1.5,
+          lineWidthMinPixels: 1,
+          pickable: true
+        }));
+      }
+
+      // 5. CAPA DE ALERTAS EN COLUMNAS 3D (Haces de luz translúcidos estéticos)
+      if (STATE.layers.events) {
+        const coreData = [];
+        const glowData = [];
+
+        STATE.activeIncidents.forEach(inc => {
+          let baseColor = [59, 130, 246]; // Info (azul/cian)
+          let height = 1500;
+          if (inc.severity === 'critical') {
+            baseColor = [240, 50, 50]; // Crítico (rojo)
+            height = 4000;
+          } else if (inc.severity === 'warning') {
+            baseColor = [249, 115, 22]; // Advertencia (naranja)
+            height = 2800;
+          }
+
+          // Núcleo brillante y fino
+          coreData.push({
+            position: inc.coords,
+            height: height,
+            color: [...baseColor, 200], // Opacidad alta
+            title: inc.title,
+            desc: inc.desc
+          });
+
+          // Resplandor exterior difuso y translúcido
+          glowData.push({
+            position: inc.coords,
+            height: height,
+            color: [...baseColor, 45], // Muy translúcido
+            title: inc.title,
+            desc: inc.desc
+          });
+        });
+
+        // Capa de resplandor exterior (ancho y difuso)
+        layers.push(new deck.ColumnLayer({
+          id: 'events-glow-3d',
+          data: glowData,
+          diskResolution: 12,
+          radius: 120, // Diámetro amplio para simular el haz de luz extendido
+          extruded: true,
+          pickable: false, // No interfiere con el puntero
+          getFillColor: d => d.color,
+          getElevation: d => d.height,
+          getPosition: d => d.position,
+          updateTriggers: {
+            getFillColor: [STATE.activeIncidents],
+            getElevation: [STATE.activeIncidents]
+          },
+          material: {
+            ambient: 0.8,
+            diffuse: 0.2,
+            shininess: 10,
+            specularColor: [255, 255, 255]
+          }
+        }));
+
+        // Capa de núcleo central (tipo láser de alta intensidad)
+        layers.push(new deck.ColumnLayer({
+          id: 'events-core-3d',
+          data: coreData,
+          diskResolution: 12,
+          radius: 20, // Núcleo muy delgado
+          extruded: true,
+          pickable: true, // Captura el tooltip
+          getFillColor: d => d.color,
+          getElevation: d => d.height,
+          getPosition: d => d.position,
+          updateTriggers: {
+            getFillColor: [STATE.activeIncidents],
+            getElevation: [STATE.activeIncidents]
+          },
+          material: {
+            ambient: 0.6,
+            diffuse: 0.5,
+            shininess: 60,
+            specularColor: [255, 255, 255]
+          }
+        }));
+      }
+
+      return layers;
+    }
+
+    // -------------------------------------------------------------
+    // GENERADOR DE CAPAS COMPILADAS PARA DECK.GL
+    // -------------------------------------------------------------
+    function updateDeckLayers() {
+      if (!deckglInstance) return;
+      const layers = [
+        ...getStaticLayers(),
+        ...getDynamicLayers()
+      ];
+      deckglInstance.setProps({ layers });
+    }
+
+    // -------------------------------------------------------------
+    // CICLO DE ANIMACIÓN DE TRÁFICO (TRIPS)
+    // -------------------------------------------------------------
+    function renderLoop() {
+      // Incrementar tiempos de animación con tasas de avance diferenciadas
+      STATE.animationTime.fluid = (STATE.animationTime.fluid + 0.6) % 500;
+      STATE.animationTime.slow = (STATE.animationTime.slow + 0.25) % 500;
+      STATE.animationTime.congested = (STATE.animationTime.congested + 0.08) % 500;
+      
+      if (!STATE.animationTime.pulse) STATE.animationTime.pulse = 0;
+      STATE.animationTime.pulse = (STATE.animationTime.pulse + 0.015) % 1.0;
+
+      // Actualizar visualizaciones del mapa
+      updateDeckLayers();
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    // -------------------------------------------------------------
+    // AL CARGAR LA PÁGINA: INICIALIZACIÓN GENERAL
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Iconos
+      lucide.createIcons();
+      startClocks();
+      
+      // Preparar ECharts
+      initRadarChart();
+
+      // Construir estructuras espaciales e incidentes
+      await prepare3DMapData();
+      recalculateSystemMetrics();
+      renderIncidentsFeed();
+
+      // Inicializar el canvas de Deck.gl
+      initDeckGLInstance();
+      renderLoop();
+
+      // Ajustes de resize
+      window.addEventListener('resize', () => {
+        if (deckglInstance) {
+          // Deck.gl maneja el resize automáticamente si el contenedor cambia de tamaño
+          updateDeckLayers();
+        }
+      });
+    });
+
+  </script>
+</body>
+</html>
