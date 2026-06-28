@@ -40,6 +40,8 @@
   
   <!-- Apache ECharts CDN -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 
 
@@ -78,10 +80,7 @@
       transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    .scada-card:hover {
-      border-color: rgba(0, 240, 255, 0.35);
-      box-shadow: 0 8px 30px rgba(0, 240, 255, 0.06);
-    }
+    
 
     /* Glows y luces neón */
     .glow-cyan { box-shadow: 0 0 15px rgba(0, 240, 255, 0.35); }
@@ -97,7 +96,7 @@
       border-radius: 8px !important;
       padding: 12px !important;
       color: #cbd5e1 !important;
-      font-family: 'JetBrains Mono', monospace !important;
+      font-family: 'Inter', sans-serif !important;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 240, 255, 0.1) !important;
       font-size: 10px !important;
       line-height: 1.5 !important;
@@ -114,10 +113,11 @@
       border-radius: 6px;
       padding: 6px 10px;
       color: #cbd5e1;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 9px;
       line-height: 1.4;
-      pointer-events: none;
+      pointer-events: none; /* Evita que intercepte el puntero y provoque parpadeos en hover */
+      cursor: pointer;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 12px rgba(0, 240, 255, 0.05);
       z-index: 30;
       transition: width 0.15s ease, height 0.15s ease, opacity 0.1s ease;
@@ -125,8 +125,8 @@
     }
     
     .district-card-tooltip.critical {
-      border-color: rgba(189, 91, 255, 0.95) !important; /* Borde morado neón crítico */
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(189, 91, 255, 0.25);
+      border-color: rgba(239, 68, 68, 0.95) !important; /* Borde rojo neón crítico */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(239, 68, 68, 0.25);
     }
     
     .district-card-tooltip.warning {
@@ -138,12 +138,33 @@
       border-color: rgba(16, 185, 129, 0.9) !important; /* Borde verde saludable */
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 12px rgba(16, 185, 129, 0.2);
     }
+    
+    .district-card-tooltip.info {
+      border-color: rgba(59, 130, 246, 0.95) !important; /* Borde azul info */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(59, 130, 246, 0.25);
+    }
 
     .district-card-tooltip.expanded {
+      pointer-events: auto; /* Permite la interacción en tarjetas fijas seleccionadas */
       padding: 10px 14px;
       z-index: 35;
       white-space: normal;
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.98), 0 0 20px rgba(0, 240, 255, 0.1);
+    }
+
+    .district-card-tooltip.animate-entrance {
+      animation: tooltipEntrance 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes tooltipEntrance {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -100%) translateY(-10px) scale(0.68);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -100%) translateY(-10px) scale(1.0);
+      }
     }
 
     .custom-scrollbar::-webkit-scrollbar {
@@ -172,7 +193,7 @@
 
     /* Customización de Tooltip de Deck.gl para estilo SCADA */
     .deck-tooltip {
-      font-family: 'JetBrains Mono', monospace !important;
+      font-family: 'Inter', sans-serif !important;
       padding: 0 !important;
       background: transparent !important;
       box-shadow: none !important;
@@ -189,9 +210,9 @@
     <!-- Logotipo / Isotipo superior -->
     <div class="flex flex-col items-center gap-1">
       <div class="w-10 h-10 rounded-full border border-slate-700 bg-slate-900 flex items-center justify-center shadow-[0_0_10px_rgba(0,240,255,0.15)]">
-        <span class="font-mono text-xs font-bold text-slate-300">MD</span>
+        <span class="font-sans text-xs font-extrabold text-slate-300">MD</span>
       </div>
-      <span class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mt-1">MADRID</span>
+      <span class="text-[9px] font-sans font-semibold text-slate-500 uppercase tracking-widest mt-1">MADRID</span>
     </div>
     
     <!-- Navegación central -->
@@ -219,11 +240,11 @@
 
     <!-- Base del sidebar: Reloj y Perfil -->
     <div class="flex flex-col items-center gap-4">
-      <div class="text-center font-mono text-[9px] text-slate-500">
-        <span class="block font-bold text-slate-400" id="sb-clock">00:00</span>
+      <div class="text-center font-sans text-[9px] text-slate-500">
+        <span class="block font-mono font-bold text-slate-400" id="sb-clock">00:00</span>
       </div>
       <div class="relative w-8 h-8 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center overflow-hidden">
-        <span class="text-xs font-mono font-bold text-cyan-400">OP</span>
+        <span class="text-xs font-sans font-extrabold text-cyan-400">OP</span>
         <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-slate-900"></span>
       </div>
     </div>
@@ -232,15 +253,15 @@
   <!-- ========================================== -->
   <!-- MODULO PRINCIPAL (Resto de la pantalla)  -->
   <!-- ========================================== -->
-  <main class="flex-1 flex flex-col h-full min-w-0 p-6 overflow-hidden relative">
+  <main class="flex-1 flex flex-col h-full min-w-0 p-2 overflow-hidden relative">
     
     <!-- 1. LA FRANJA SUPERIOR: "EL PULSÓMETRO" (KPIs Globales) - Reducido margen superior ya que quitamos cabecera -->
-    <section class="grid grid-cols-5 gap-6 mb-4 mt-2 flex-shrink-0">
+    <section class="grid grid-cols-5 gap-2.5 mb-2 mt-1 flex-shrink-0">
       
       <!-- KPI 1: Movilidad -->
       <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-movilidad">
         <div class="flex justify-between items-start">
-          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">MOVILIDAD</span>
+          <span class="text-[10px] font-bold font-sans tracking-wide text-slate-400 uppercase">MOVILIDAD</span>
           <div class="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <i data-lucide="car" class="w-3.5 h-3.5"></i>
           </div>
@@ -248,7 +269,7 @@
         <div class="flex justify-between items-end mt-1">
           <div>
             <p class="text-2xl font-bold font-mono text-slate-100" id="val-movilidad">82%</p>
-            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Fluidez de Tráfico</p>
+            <p class="text-[9px] text-slate-500 font-sans mt-0.5">Fluidez de Tráfico</p>
           </div>
           <!-- Sparkline de tendencia (SVG) -->
           <div class="w-20 h-10 pb-1">
@@ -269,7 +290,7 @@
       <!-- KPI 2: Agua -->
       <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-agua">
         <div class="flex justify-between items-start">
-          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">AGUA (CYII)</span>
+          <span class="text-[10px] font-bold font-sans tracking-wide text-slate-400 uppercase">AGUA (CYII)</span>
           <div class="w-6 h-6 rounded bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
             <i data-lucide="droplet" class="w-3.5 h-3.5"></i>
           </div>
@@ -277,9 +298,9 @@
         <div class="flex justify-between items-end mt-1">
           <div>
             <p class="text-2xl font-bold font-mono text-slate-100" id="val-agua">1.24M m³</p>
-            <div id="badge-agua" class="px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_8px_rgba(0,200,255,0.15)] flex items-center gap-1.5 mt-1 w-fit">
+            <div id="badge-agua" class="px-2 py-0.5 rounded text-[9px] font-sans font-semibold bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_8px_rgba(0,200,255,0.15)] flex items-center gap-1.5 mt-1 w-fit">
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" id="badge-agua-ping"></span>
-              <span id="val-agua-eff">98.4%</span> Eficiencia
+              <span id="val-agua-eff" class="font-mono">98.4%</span> Eficiencia
             </div>
           </div>
         </div>
@@ -288,7 +309,7 @@
       <!-- KPI 3: Medio Ambiente -->
       <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-medioambiente">
         <div class="flex justify-between items-start">
-          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">MEDIO AMBIENTE</span>
+          <span class="text-[10px] font-bold font-sans tracking-wide text-slate-400 uppercase">MEDIO AMBIENTE</span>
           <div class="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400" id="icon-container-ma">
             <i data-lucide="wind" class="w-3.5 h-3.5"></i>
           </div>
@@ -297,12 +318,12 @@
           <div>
             <div class="flex items-baseline gap-1">
               <p class="text-2xl font-bold font-mono text-slate-100" id="val-ica">34</p>
-              <span class="text-[9px] font-mono text-slate-500">ICA</span>
+              <span class="text-[9px] font-sans font-semibold text-slate-500">ICA</span>
             </div>
-            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Calidad del Aire</p>
+            <p class="text-[9px] text-slate-500 font-sans mt-0.5">Calidad del Aire</p>
           </div>
           <div>
-            <span id="badge-medioambiente" class="px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)] animate-pulse">
+            <span id="badge-medioambiente" class="px-2 py-0.5 rounded text-[9px] font-sans font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)] animate-pulse">
               EXCELENTE
             </span>
           </div>
@@ -312,7 +333,7 @@
       <!-- KPI 4: Residuos -->
       <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-residuos">
         <div class="flex justify-between items-start">
-          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">RESIDUOS</span>
+          <span class="text-[10px] font-bold font-sans tracking-wide text-slate-400 uppercase">RESIDUOS</span>
           <div class="w-6 h-6 rounded bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </div>
@@ -320,7 +341,7 @@
         <div class="flex justify-between items-end mt-1">
           <div>
             <p class="text-2xl font-bold font-mono text-slate-100" id="val-residuos">42%</p>
-            <p class="text-[9px] text-slate-500 font-mono mt-0.5">Llenado medio</p>
+            <p class="text-[9px] text-slate-500 font-sans mt-0.5">Llenado medio</p>
           </div>
           <!-- Sparkline de tendencia (SVG) -->
           <div class="w-20 h-10 pb-1">
@@ -341,7 +362,7 @@
       <!-- KPI 5: Energía Eficiencia -->
       <div class="scada-card p-3 flex flex-col justify-between h-[100px]" id="kpi-energia">
         <div class="flex justify-between items-start">
-          <span class="text-[10px] font-bold font-mono tracking-wider text-slate-400 uppercase">ENERGÍA</span>
+          <span class="text-[10px] font-bold font-sans tracking-wide text-slate-400 uppercase">ENERGÍA</span>
           <div class="w-6 h-6 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <i data-lucide="zap" class="w-3.5 h-3.5"></i>
           </div>
@@ -349,7 +370,7 @@
         <div class="flex justify-between items-end mt-1">
           <div>
             <p class="text-lg font-bold font-mono text-slate-100" id="val-energia">78.2%</p>
-            <div id="badge-energia" class="px-2 py-0.5 rounded text-[9px] font-mono font-semibold bg-amber-500/10 border border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.15)] flex items-center gap-1.5 mt-1 w-fit">
+            <div id="badge-energia" class="px-2 py-0.5 rounded text-[9px] font-sans font-semibold bg-amber-500/10 border border-amber-500/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.15)] flex items-center gap-1.5 mt-1 w-fit">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
               Red Estable
             </div>
@@ -360,7 +381,7 @@
     </section>
 
     <!-- 2. EL BLOQUE CENTRAL Y DERECHO -->
-    <section class="grid grid-cols-12 gap-6 flex-1 min-h-0">
+    <section class="grid grid-cols-12 gap-2.5 flex-1 min-h-0">
       
       <!-- BLOQUE CENTRAL IZQUIERDO (Ampliado): "EL GEMELO DIGITAL" (Deck.gl 3D Map) -->
       <div class="col-span-10 flex flex-col h-full relative scada-card overflow-hidden">
@@ -374,23 +395,15 @@
 
           <!-- CONTROLES FLOTANTES IZQUIERDOS (Top Left) -->
           <div class="absolute top-4 left-4 z-20 flex flex-col gap-3 pointer-events-none w-64">
-            <!-- AVISO DE SIMULACION EN CURSO -->
-            <div id="crisis-banner" class="hidden scada-card border-red-500/50 bg-red-950/20 px-4 py-2 shadow-2xl items-center gap-3 animate-pulse siren-active w-full flex-shrink-0">
-              <div class="w-2.5 h-2.5 rounded-full bg-red-500 glow-red flex-shrink-0"></div>
-              <div class="text-left">
-                <h4 class="text-xs font-bold font-mono text-red-400 uppercase tracking-wider">ESTADO DE ALERTA ACTIVADO</h4>
-                <p class="text-[9px] font-mono text-slate-400">Incidentes graves reportados en el Gemelo Digital</p>
-              </div>
-            </div>
 
             <!-- DIRECTORIO DE ACTIVOS -->
-            <div class="pointer-events-auto w-full" onclick="event.stopPropagation()">
+            <div id="asset-directory-card-wrapper" class="pointer-events-auto w-full" onclick="event.stopPropagation()">
               <div class="scada-card border-slate-700 bg-slate-950/80 p-3 shadow-2xl w-full text-left">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
-                  <span class="text-[9px] font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1.5 font-bold">
+                  <span class="text-[9px] font-sans text-slate-200 uppercase tracking-widest flex items-center gap-1.5 font-bold">
                     <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> DIRECTORIO DE ACTIVOS
                   </span>
-                  <span class="text-[8px] font-mono text-slate-500">AGUA & RESIDUOS</span>
+                  <span class="text-[8px] font-sans font-semibold text-slate-350">AGUA & RESIDUOS</span>
                 </div>
                 <div id="asset-directory-list" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
                   <!-- Se poblará dinámicamente -->
@@ -403,39 +416,39 @@
           <div class="absolute top-4 right-4 z-20 flex flex-col gap-2.5">
             <!-- Toggles de Capas -->
             <div class="scada-card border-slate-700 bg-slate-950/80 p-2 flex flex-col gap-2 shadow-2xl items-end w-52">
-              <span class="text-[8px] font-mono text-slate-500 uppercase tracking-widest mb-1 self-start pl-1">Capas Activas</span>
+              <span class="text-[8px] font-sans font-semibold text-slate-500 uppercase tracking-widest mb-1 self-start pl-1">Capas Activas</span>
               
               <!-- Capa Tráfico -->
-              <button id="toggle-traffic" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-emerald-500/30 bg-emerald-950/15 text-emerald-400 text-xs font-mono transition-all hover:bg-emerald-950/30" onclick="toggleMapLayer('traffic')">
+              <button id="toggle-traffic" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-emerald-500/30 bg-emerald-950/15 text-emerald-400 text-xs font-sans font-semibold transition-all hover:bg-emerald-950/30" onclick="toggleMapLayer('traffic')">
                 <span class="flex items-center gap-1.5"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i> TRÁFICO VEHICULAR</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-green"></span>
               </button>
 
               <!-- Capa Agua y Residuos -->
-              <button id="toggle-waterWaste" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('waterWaste')">
+              <button id="toggle-waterWaste" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-sans font-semibold transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('waterWaste')">
                 <span class="flex items-center gap-1.5"><i data-lucide="droplet" class="w-3.5 h-3.5"></i> AGUA Y RESIDUOS</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
               </button>
               
               <!-- Capa Aire Calidad -->
-              <button id="toggle-airQuality" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('airQuality')">
+              <button id="toggle-airQuality" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-sans font-semibold transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('airQuality')">
                 <span class="flex items-center gap-1.5"><i data-lucide="wind" class="w-3.5 h-3.5"></i> CALIDAD DEL AIRE</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
               </button>
 
               <!-- Capa Consumo Energía -->
-              <button id="toggle-energyGrid" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('energyGrid')">
+              <button id="toggle-energyGrid" class="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-sans font-semibold transition-all hover:bg-slate-900/30" onclick="toggleMapLayer('energyGrid')">
                 <span class="flex items-center gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5"></i> CONSUMO ENERGÍA</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
               </button>
               
               <!-- Cámara Reset -->
-              <button class="w-full flex items-center gap-1.5 justify-center px-2 py-1 rounded border border-slate-800 bg-slate-900 text-slate-300 text-[10px] font-mono hover:border-slate-700 transition-all mt-1" onclick="resetMapCamera()">
+              <button class="w-full flex items-center gap-1.5 justify-center px-2 py-1 rounded border border-slate-800 bg-slate-900 text-slate-300 text-[10px] font-sans hover:border-slate-700 transition-all mt-1" onclick="resetMapCamera()">
                 <i data-lucide="navigation-2" class="w-3 h-3 rotate-45 text-cyan-400"></i> ENCUADRE REGIONAL
               </button>
 
               <!-- Leyenda Toggle -->
-              <button id="btn-toggle-legend" class="w-full flex items-center justify-between px-2 py-1 rounded border border-slate-800 bg-slate-900/60 text-slate-400 text-[10px] font-mono hover:text-slate-200 transition-all mt-1" onclick="toggleLegendContent()">
+              <button id="btn-toggle-legend" class="w-full flex items-center justify-between px-2 py-1 rounded border border-slate-800 bg-slate-900/60 text-slate-400 text-[10px] font-sans hover:text-slate-200 transition-all mt-1" onclick="toggleLegendContent()">
                 <span class="flex items-center gap-1"><i data-lucide="info" class="w-3 h-3 text-cyan-400"></i> SIMBOLOGÍA</span>
                 <i data-lucide="chevron-down" id="legend-chevron" class="w-3.5 h-3.5 transition-transform duration-300"></i>
               </button>
@@ -492,7 +505,7 @@
       </div>
 
       <!-- BLOQUE LATERAL DERECHO (Reducido a la mitad): "LA SALA DE CONTROL" -->
-      <div class="col-span-2 flex flex-col h-full gap-6 min-h-0">
+      <div class="col-span-2 flex flex-col h-full gap-2.5 min-h-0">
         
         <!-- COMPONENTE A: GRÁFICO DE SOSTENIBILIDAD (ECharts Radar) -->
         <div class="scada-card flex flex-col p-4 h-[42%] relative overflow-hidden">
@@ -501,13 +514,13 @@
           
           <header class="flex justify-between items-start mb-2 flex-shrink-0">
             <div>
-              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-200 uppercase">Índice Sostenibilidad Global</h3>
-              <p class="text-[9.5px] text-slate-500 font-mono mt-0.5">Pilares Transversales Smart City</p>
+              <h3 class="text-[13.5px] font-bold font-sans tracking-wide text-slate-100 uppercase">Índice Sostenibilidad Global</h3>
+              <p class="text-[10px] text-slate-400 font-sans mt-0.5">Pilares Transversales Smart City</p>
             </div>
             <!-- Score global -->
             <div class="text-right">
               <span class="text-lg font-bold font-mono text-cyan-400" id="sustainability-score">81.4</span>
-              <span class="text-[8.5px] font-mono text-slate-500 block">/ 100 Pts</span>
+              <span class="text-[9px] font-sans text-slate-400 block">/ 100 Pts</span>
             </div>
           </header>
 
@@ -523,14 +536,12 @@
           <!-- Cabecera del Feed -->
           <header class="flex justify-between items-center mb-3 flex-shrink-0 border-b border-slate-800/80 pb-2">
             <div>
-              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-200 uppercase flex items-center gap-1.5">
-                <i data-lucide="list-collapse" class="w-4 h-4 text-cyan-400"></i> Sala de Incidentes
+              <h3 class="text-xs font-bold font-sans tracking-wide text-slate-200 uppercase">
+                Sala de Incidentes
               </h3>
-              <p class="text-[9px] text-slate-500 font-mono mt-0.5">Eventos y Crisis en Tiempo Real</p>
             </div>
             <!-- Botón Industrial de Simulación -->
-            <button class="px-2.5 py-1.5 rounded-lg border border-red-500/40 bg-red-950/20 hover:bg-red-900/30 text-red-400 text-[10px] font-mono font-bold tracking-wide transition-all shadow-[0_0_10px_rgba(239,68,68,0.1)] hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] flex items-center gap-1.5" onclick="triggerRandomIncident()">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+            <button class="px-2.5 py-1.5 rounded-lg border border-red-500/40 bg-red-950/20 hover:bg-red-900/30 text-red-400 text-[10px] font-sans font-bold tracking-wide transition-all shadow-[0_0_10px_rgba(239,68,68,0.1)] hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]" onclick="triggerRandomIncident()">
               SIMULAR INCIDENTE
             </button>
           </header>
@@ -541,9 +552,8 @@
           </div>
 
           <!-- Totalizador en Footer -->
-          <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-800/50 flex-shrink-0 text-[9px] font-mono text-slate-500">
-            <span>Servicio de Respuesta Rápida 112 / MD</span>
-            <span class="text-slate-400 font-medium" id="incident-summary">3 Incidentes Activos</span>
+          <div class="flex justify-end items-center mt-3 pt-2 border-t border-slate-800/50 flex-shrink-0 text-[9px] font-sans text-slate-500">
+            <span class="text-slate-400 font-medium" id="incident-summary"><span class="font-mono">3</span> Incidentes Activos</span>
           </div>
 
         </div>
@@ -628,7 +638,49 @@
       waterWasteNodes: null,
       airQualityZones: null,
       energyMunicipalities: null,
-      tripsData: null
+      tripsData: null,
+      energyAssets: [
+        {
+          id: 'ea-chamartin',
+          name: 'Subestación Eléctrica Chamartín',
+          coords: [-3.678000, 40.472000],
+          type: 'Subestación',
+          status: 'Óptimo',
+          load: '58%',
+          generation: '4.2 MW (Cogeneración)',
+          color: [16, 185, 129] // Verde
+        },
+        {
+          id: 'ea-cibeles',
+          name: 'Solar Tejado Palacio de Cibeles',
+          coords: [-3.693000, 40.419200],
+          type: 'Generación Solar',
+          status: 'Óptimo',
+          load: '92%',
+          generation: '380 kW (Fotovoltaica)',
+          color: [16, 185, 129] // Verde
+        },
+        {
+          id: 'ea-cajamagica',
+          name: 'Parque Fotovoltaico Caja Mágica',
+          coords: [-3.682000, 40.364000],
+          type: 'Generación Solar',
+          status: 'Avería en Inversor 3',
+          load: '0%',
+          generation: '0 kW (Offline)',
+          color: [239, 68, 68] // Rojo parpadeante
+        },
+        {
+          id: 'ea-eliptica',
+          name: 'Centro de Transformación Plaza Elíptica',
+          coords: [-3.718200, 40.384500],
+          type: 'Transformación',
+          status: 'Óptimo',
+          load: '64%',
+          generation: '1.8 MW (Red General)',
+          color: [16, 185, 129] // Verde
+        }
+      ]
     };
 
     const INCIDENT_POOL = [
@@ -1008,31 +1060,180 @@
             fillLevel = 48;
           }
           f.properties.fillLevel = fillLevel;
+
+          // Pre-calcular datos de tendencia (sparkline semanal de 8 puntos)
+          const trendData = [];
+          let currentVal = fillLevel * 0.8;
+          for (let i = 0; i < 7; i++) {
+            trendData.push(Math.round(currentVal));
+            currentVal += (Math.random() - 0.4) * 8;
+            currentVal = Math.max(10, Math.min(100, currentVal));
+          }
+          trendData.push(fillLevel);
+          f.properties.trendData = trendData;
+
+          // Asignar eficiencia energética de distritos (Consumo de Energía)
+          let energyEfficiency = 80 + Math.round(Math.random() * 15);
+          if (name === 'Chamartín' || name === 'Centro') {
+            energyEfficiency = 64; // Ineficiente / pico de consumo
+          } else if (name === 'Carabanchel' || name === 'Puente de Vallecas') {
+            energyEfficiency = 71;
+          } else if (name === 'Retiro' || name === 'Moncloa-Aravaca' || name === 'Salamanca') {
+            energyEfficiency = 92; // Altamente eficiente
+          }
+          f.properties.energyEfficiency = energyEfficiency;
         });
       } catch (e) {
         console.error('Error al cargar madrid_districts.geojson:', e);
         STATE.wasteDistricts = { type: 'FeatureCollection', features: [] };
       }
 
-      STATE.pollutionPoints = [];
+      // 3.1 Generar malla de puntos de contaminación en Madrid para el HexagonLayer
+      STATE.pollutionGridPoints = [];
+      const lngStart = -3.78, lngEnd = -3.56, lngStep = 0.0075;
+      const latStart = 40.32, latEnd = 40.49, latStep = 0.0055;
+      
+      const greenZones = [
+        { coords: [-3.748, 40.419], radius: 0.025 }, // Casa de Campo
+        { coords: [-3.682, 40.415], radius: 0.008 }  // Retiro
+      ];
+      
+      const trafficZones = [
+        { coords: [-3.689, 40.466], radius: 0.02 },  // Plaza Castilla
+        { coords: [-3.689, 40.417], radius: 0.015 }, // Atocha / Castellana centro
+        { coords: [-3.718, 40.385], radius: 0.015 }, // Plaza Elíptica
+        { coords: [-3.615, 40.445], radius: 0.02 }   // A-2 Canillejas
+      ];
+
+      for (let lng = lngStart; lng <= lngEnd; lng += lngStep) {
+        for (let lat = latStart; lat <= latEnd; lat += latStep) {
+          const distToCenter = Math.hypot(lng - (-3.69), lat - 40.41);
+          let weight = Math.max(0.1, 1.0 - distToCenter * 4.2);
+          
+          greenZones.forEach(gz => {
+            const d = Math.hypot(lng - gz.coords[0], lat - gz.coords[1]);
+            if (d < gz.radius) {
+              weight = Math.max(0.05, weight * 0.35);
+            }
+          });
+          
+          trafficZones.forEach(tz => {
+            const d = Math.hypot(lng - tz.coords[0], lat - tz.coords[1]);
+            if (d < tz.radius) {
+              weight = Math.min(1.0, weight + (1.0 - d / tz.radius) * 0.45);
+            }
+          });
+
+          weight = Math.max(0.05, Math.min(1.0, weight + (Math.random() - 0.5) * 0.08));
+
+          STATE.pollutionGridPoints.push({
+            coords: [lng, lat],
+            weight: weight
+          });
+        }
+      }
+
+      // 3.2 Generar líneas cinéticas de viento de Suroeste (WSW) a Nordeste (ENE)
+      STATE.windLines = [];
       for (let i = 0; i < 45; i++) {
-        STATE.pollutionPoints.push({
-          coords: [-3.703790 + (Math.random() - 0.5) * 0.08, 40.416775 + (Math.random() - 0.5) * 0.08],
-          weight: Math.random() * 0.8 + 0.2
-        });
+        const wLngStart = -3.85 + Math.random() * 0.16;
+        const wLatStart = 40.28 + Math.random() * 0.18;
+        const wLngEnd = wLngStart + 0.18;
+        const wLatEnd = wLatStart + 0.06;
+        const midLng = wLngStart + 0.09 + (Math.random() - 0.5) * 0.02;
+        const midLat = wLatStart + 0.03 + (Math.random() - 0.5) * 0.02;
+        
+        const path = [
+          [wLngStart, wLatStart],
+          [midLng, midLat],
+          [wLngEnd, wLatEnd]
+        ];
+        
+        const duration = 180 + Math.random() * 80;
+        const startOffset = Math.random() * 500;
+        const timestamps = [
+          startOffset,
+          startOffset + duration * 0.5,
+          startOffset + duration
+        ];
+
+        STATE.windLines.push({ path, timestamps });
+        if (startOffset + duration > 500) {
+          STATE.windLines.push({
+            path,
+            timestamps: timestamps.map(t => t - 500)
+          });
+        }
       }
-      for (let i = 0; i < 25; i++) {
-        STATE.pollutionPoints.push({
-          coords: [-3.567990 + (Math.random() - 0.5) * 0.05, 40.483936 + (Math.random() - 0.5) * 0.05],
-          weight: Math.random() * 0.9 + 0.3
-        });
-      }
-      for (let i = 0; i < 30; i++) {
-        STATE.pollutionPoints.push({
-          coords: [-3.729350 + (Math.random() - 0.5) * 0.07, 40.308100 + (Math.random() - 0.5) * 0.07],
-          weight: Math.random() * 0.7 + 0.2
-        });
-      }
+
+      // 3.3 Inicializar Estaciones Meteorológicas de Calidad del Aire oficiales
+      STATE.weatherStations = [
+        {
+          id: 'est-retiro',
+          name: 'Estación Retiro (Parque)',
+          coords: [-3.682000, 40.415000],
+          ica: 38,
+          status: 'Excelente / Limpio',
+          temp: 26.5,
+          humidity: 44,
+          no2: 12,
+          pm25: 6,
+          o3: 55,
+          color: [16, 185, 129] // Verde
+        },
+        {
+          id: 'est-eliptica',
+          name: 'Estación Plaza Elíptica (Tráfico)',
+          coords: [-3.718000, 40.385000],
+          ica: 154,
+          status: 'Crítico / Alerta',
+          temp: 29.8,
+          humidity: 32,
+          no2: 88,
+          pm25: 42,
+          o3: 25,
+          color: [239, 68, 68] // Rojo
+        },
+        {
+          id: 'est-castilla',
+          name: 'Estación Plaza de Castilla',
+          coords: [-3.689000, 40.466000],
+          ica: 112,
+          status: 'Moderado / Malo',
+          temp: 28.9,
+          humidity: 36,
+          no2: 65,
+          pm25: 29,
+          o3: 38,
+          color: [249, 115, 22] // Naranja
+        },
+        {
+          id: 'est-casacampo',
+          name: 'Estación Casa de Campo',
+          coords: [-3.748000, 40.419000],
+          ica: 32,
+          status: 'Excelente / Limpio',
+          temp: 25.8,
+          humidity: 46,
+          no2: 8,
+          pm25: 5,
+          o3: 58,
+          color: [16, 185, 129] // Verde
+        },
+        {
+          id: 'est-arturosoria',
+          name: 'Estación Arturo Soria',
+          coords: [-3.658000, 40.448000],
+          ica: 75,
+          status: 'Aceptable / Regular',
+          temp: 27.4,
+          humidity: 40,
+          no2: 44,
+          pm25: 18,
+          o3: 45,
+          color: [250, 200, 10] // Amarillo
+        }
+      ];
 
       // 4. Trazas para TripsLayer (Tráfico) desde carreteras reales
       try {
@@ -1049,6 +1250,14 @@
           
           const name = feature.properties.name || feature.properties.ref || "Vía Urbana";
           const type = feature.properties.highway;
+
+          // Optimización de GPU: Omitir calles residenciales y terciarias, y muestrear secundarias a 15%
+          if (type === 'residential' || type === 'tertiary') {
+            return;
+          }
+          if (type === 'secondary' && Math.random() > 0.15) {
+            return;
+          }
           
           // Calcular la longitud en grados aproximados
           let totalLen = 0;
@@ -1138,9 +1347,35 @@
         });
         
         STATE.tripsData = trips;
+
+        // Pre-calcular viajes que pasan cerca de Plaza de Castilla y A-2 Canillejas para optimización extrema del render-loop
+        STATE.plazaCastillaTrips = [];
+        STATE.a2CanillejasTrips = [];
+        const coordsPlaza = [-3.689200, 40.466200];
+        const coordsA2 = [-3.615000, 40.445000];
+
+        STATE.tripsData.forEach(trip => {
+          let nearPlaza = false;
+          let nearA2 = false;
+          for (let i = 0; i < trip.path.length; i++) {
+            const pt = trip.path[i];
+            
+            const distPlaza = Math.hypot(pt[0] - coordsPlaza[0], pt[1] - coordsPlaza[1]);
+            if (distPlaza < 0.012) nearPlaza = true;
+
+            const distA2 = Math.hypot(pt[0] - coordsA2[0], pt[1] - coordsA2[1]);
+            if (distA2 < 0.012) nearA2 = true;
+
+            if (nearPlaza && nearA2) break;
+          }
+          if (nearPlaza) STATE.plazaCastillaTrips.push(trip);
+          if (nearA2) STATE.a2CanillejasTrips.push(trip);
+        });
       } catch (err) {
         console.error("Error al cargar GeoJSON de carreteras:", err);
         STATE.tripsData = [];
+        STATE.plazaCastillaTrips = [];
+        STATE.a2CanillejasTrips = [];
       }
     }
 
@@ -1239,12 +1474,14 @@
       // Banner
       const hasCritical = STATE.activeIncidents.some(i => i.severity === 'critical');
       const crisisBanner = document.getElementById('crisis-banner');
-      if (hasCritical) {
-        crisisBanner.classList.remove('hidden');
-        crisisBanner.classList.add('flex');
-      } else {
-        crisisBanner.classList.add('hidden');
-        crisisBanner.classList.remove('flex');
+      if (crisisBanner) {
+        if (hasCritical) {
+          crisisBanner.classList.remove('hidden');
+          crisisBanner.classList.add('flex');
+        } else {
+          crisisBanner.classList.add('hidden');
+          crisisBanner.classList.remove('flex');
+        }
       }
     }
 
@@ -1290,10 +1527,10 @@
           radius: '68%',
           center: ['50%', '52%'],
           axisName: {
-            color: '#94a3b8',
-            fontFamily: 'JetBrains Mono',
-            fontSize: 8,
-            fontWeight: 500,
+            color: '#e2e8f0',
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 11,
+            fontWeight: 'bold',
             formatter: (value) => value.toUpperCase()
           },
           splitArea: {
@@ -1359,6 +1596,41 @@
       updateKPIWidgets();
       calculateSustainabilityScore();
       updateRadarChart();
+      recalculateTripStates();
+    }
+
+    // Recalcula el estado actual de cada traza de tráfico (Trips)
+    // Se ejecuta únicamente cuando cambian los incidentes activos (evitando recálculos a 60 FPS)
+    function recalculateTripStates() {
+      if (!STATE.tripsData) return;
+      
+      STATE.tripsData.forEach(trip => {
+        let state = trip.defaultState;
+        
+        STATE.activeIncidents.forEach(inc => {
+          const incCoords = inc.coords;
+          let closeToIncident = false;
+          
+          for (let i = 0; i < trip.path.length; i++) {
+            const pt = trip.path[i];
+            const dist = Math.hypot(pt[0] - incCoords[0], pt[1] - incCoords[1]);
+            if (dist < 0.018) {
+              closeToIncident = true;
+              break;
+            }
+          }
+          
+          if (closeToIncident) {
+            if (inc.severity === 'critical') {
+              state = 'congested';
+            } else if (inc.severity === 'warning' && state !== 'congested') {
+              state = 'slow';
+            }
+          }
+        });
+        
+        trip.currentState = state;
+      });
     }
 
     // -------------------------------------------------------------
@@ -1382,15 +1654,15 @@
       }
       
       STATE.activeIncidents.forEach((inc) => {
-        let borderClass = 'border-slate-800 hover:border-slate-700 bg-slate-950/20';
-        let badgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        let borderClass = 'border-slate-800 bg-slate-950/45';
+        let badgeClass = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
         
         if (inc.severity === 'critical') {
-          borderClass = 'border-red-500/30 hover:border-red-500/60 bg-red-950/5';
-          badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30 glow-red';
+          borderClass = 'border-red-500/40 bg-red-950/15';
+          badgeClass = 'bg-red-500/15 text-red-300 border-red-500/30 glow-red';
         } else if (inc.severity === 'warning') {
-          borderClass = 'border-orange-500/30 hover:border-orange-500/60 bg-orange-950/5';
-          badgeClass = 'bg-orange-500/15 text-orange-400 border-orange-500/30 glow-orange';
+          borderClass = 'border-orange-500/40 bg-orange-950/15';
+          badgeClass = 'bg-orange-500/15 text-orange-300 border-orange-500/30 glow-orange';
         }
         
         const card = document.createElement('div');
@@ -1398,6 +1670,15 @@
         card.onclick = (e) => {
           if (e.target.closest('.btn-resolve-incident')) return;
           focusOnCoordinates(inc.coords);
+          
+          // Registrar incidente como seleccionado
+          STATE.selectedObjectId = inc.id;
+          STATE.selectedObjectType = 'incident';
+          STATE.hoveredObjectId = null;
+          
+          // Actualizar tooltips y directorio
+          updatePersistentTooltips();
+          renderAssetDirectory();
         };
         
         card.innerHTML = `
@@ -1406,13 +1687,13 @@
               <span class="px-1.5 py-0.5 rounded text-[8px] font-mono border font-semibold ${badgeClass}">
                 ${inc.sector.toUpperCase()}
               </span>
-              <h4 class="text-xs font-bold text-slate-200 truncate font-mono">${inc.title}</h4>
+              <h4 class="text-xs font-bold text-slate-100 truncate">${inc.title}</h4>
             </div>
-            <span class="text-[9px] font-mono text-slate-500 whitespace-nowrap">${inc.time}</span>
+            <span class="text-[9px] font-mono text-slate-350 whitespace-nowrap">${inc.time}</span>
           </div>
-          <p class="text-[10px] text-slate-400 font-sans leading-relaxed">${inc.desc}</p>
+          <p class="text-[10.5px] text-slate-200 font-sans leading-relaxed">${inc.desc}</p>
           <div class="flex justify-between items-center mt-1 border-t border-slate-900/60 pt-2">
-            <span class="text-[8px] font-mono text-slate-500 flex items-center gap-1">
+            <span class="text-[8.5px] font-mono text-slate-350 flex items-center gap-1">
               <i data-lucide="map-pin" class="w-3 h-3 text-cyan-400"></i> Column 3D: ${inc.coords[1].toFixed(4)}, ${inc.coords[0].toFixed(4)}
             </span>
             <button class="btn-resolve-incident px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 text-[9px] font-mono hover:bg-emerald-900/40 transition-all" onclick="resolveIncident('${inc.id}')">
@@ -1472,27 +1753,46 @@
     // MOTOR DE INTEGRACIÓN DE DECK.GL (WebGL2)
     // -------------------------------------------------------------
     
-    // Toggles de Capas
+    // Toggles de Capas (Exclusivo - Comportamiento de Botón de Radio)
     function toggleMapLayer(layer) {
-      STATE.layers[layer] = !STATE.layers[layer];
-      const btn = document.getElementById(`toggle-${layer}`);
-      if (!btn) return;
-      const indicator = btn.querySelector('span:last-child');
-      if (!indicator) return;
+      const wasActive = STATE.layers[layer];
       
-      if (STATE.layers[layer]) {
-        let col = layer === 'traffic' ? 'emerald' : layer === 'waterWaste' ? 'cyan' : layer === 'airQuality' ? 'emerald' : 'amber';
-        let glow = layer === 'traffic' ? 'green' : layer === 'waterWaste' ? 'cyan' : layer === 'airQuality' ? 'green' : 'orange';
-        btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-${col}-500/30 bg-${col}-950/15 text-${col}-400 text-xs font-mono transition-all hover:bg-${col}-950/30`;
-        indicator.className = `w-1.5 h-1.5 rounded-full bg-${col}-400 glow-${glow}`;
-      } else {
-        btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-mono transition-all hover:bg-slate-900/30`;
-        indicator.className = 'w-1.5 h-1.5 rounded-full bg-slate-700';
+      // Desactivar todas las capas primero
+      Object.keys(STATE.layers).forEach(key => {
+        STATE.layers[key] = false;
+        
+        const btn = document.getElementById(`toggle-${key}`);
+        if (btn) {
+          const indicator = btn.querySelector('span:last-child');
+          btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-slate-800 bg-slate-950/10 text-slate-500 text-xs font-sans font-semibold transition-all hover:bg-slate-900/30`;
+          if (indicator) indicator.className = 'w-1.5 h-1.5 rounded-full bg-slate-700';
+        }
+      });
+
+      // Si no estaba activa antes, activarla ahora
+      if (!wasActive) {
+        STATE.layers[layer] = true;
+        const btn = document.getElementById(`toggle-${layer}`);
+        if (btn) {
+          const indicator = btn.querySelector('span:last-child');
+          if (indicator) {
+            let col = layer === 'traffic' ? 'emerald' : layer === 'waterWaste' ? 'cyan' : layer === 'airQuality' ? 'emerald' : 'amber';
+            let glow = layer === 'traffic' ? 'green' : layer === 'waterWaste' ? 'cyan' : layer === 'airQuality' ? 'green' : 'orange';
+            btn.className = `w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded border border-${col}-500/30 bg-${col}-950/15 text-${col}-400 text-xs font-sans font-semibold transition-all hover:bg-${col}-950/30`;
+            indicator.className = `w-1.5 h-1.5 rounded-full bg-${col}-400 glow-${glow}`;
+          }
+        }
       }
 
-      if (layer === 'waterWaste') {
-        renderAssetDirectory();
-      }
+      // Limpiar selección previa al cambiar de capa para evitar residuos
+      STATE.selectedObjectId = null;
+      STATE.selectedObjectType = null;
+      STATE.hoveredObjectId = null;
+
+      // Actualizar mapa, tooltips y el listado de activos
+      updateDeckLayers();
+      updatePersistentTooltips();
+      renderAssetDirectory();
     }
 
     // FlyTo de cámara virtual en Deck.gl
@@ -1528,6 +1828,44 @@
       }
     }
 
+    // Algoritmo Ray-Casting nativo para comprobar si una coordenada cae dentro de un polígono
+    function isPointInPolygon(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // Busca y devuelve el nombre del distrito municipal al que pertenece una coordenada geográfica
+    function getDistrictForPoint(lng, lat) {
+      if (!STATE.wasteDistricts || !STATE.wasteDistricts.features) return null;
+      for (let i = 0; i < STATE.wasteDistricts.features.length; i++) {
+        const f = STATE.wasteDistricts.features[i];
+        const geom = f.geometry;
+        if (!geom) continue;
+        
+        if (geom.type === 'Polygon') {
+          if (isPointInPolygon([lng, lat], geom.coordinates[0])) {
+            return f.properties.name;
+          }
+        } else if (geom.type === 'MultiPolygon') {
+          for (let p = 0; p < geom.coordinates.length; p++) {
+            const poly = geom.coordinates[p];
+            if (isPointInPolygon([lng, lat], poly[0])) {
+              return f.properties.name;
+            }
+          }
+        }
+      }
+      return null;
+    }
+
     // Control de la visualización de la Leyenda Colapsable
     function toggleLegendContent() {
       const content = document.getElementById('legend-content');
@@ -1550,10 +1888,7 @@
       const container = document.getElementById('persistent-tooltips-container');
       if (!container) return;
 
-      const isWaterWasteActive = STATE.layers.waterWaste;
-      
-      // Si la capa de agua y residuos no está activa o los datos no están cargados, vaciar el contenedor y salir
-      if (!isWaterWasteActive || !deckglInstance || !deckglInstance.width || !STATE.wasteDistricts || !STATE.wasteDistricts.features) {
+      if (!deckglInstance || !deckglInstance.width) {
         container.innerHTML = '';
         return;
       }
@@ -1571,84 +1906,207 @@
       }
 
       const activeTooltipIds = [];
+      const isWaterWasteActive = STATE.layers.waterWaste;
 
-      // 1. Renderizar tooltips de Distritos de Residuos
-      STATE.wasteDistricts.features.forEach(f => {
-        const id = f.properties.id;
-        const name = f.properties.name;
-        const fillVal = f.properties.fillLevel;
-        const centroid = f.properties.centroid;
-        
-        // Proyectar coordenadas a pixels en pantalla
-        const [x, y] = viewport.project(centroid);
-        
-        const tooltipId = `tooltip-${id}`;
-        activeTooltipIds.push(tooltipId);
-
-        let el = document.getElementById(tooltipId);
-        if (!el) {
-          el = document.createElement('div');
-          el.id = tooltipId;
-          container.appendChild(el);
-        }
-
-        // Determinar estado de salud del distrito
-        let stateClass = 'healthy';
-        let statusText = 'NOMINAL';
-        let badgeColor = 'text-emerald-400 font-bold';
-        let saturados = 2;
-        let recogidaText = 'Hace 2 horas';
-        
-        if (fillVal >= 80) {
-          stateClass = 'critical';
-          statusText = 'ESTADO CRÍTICO';
-          badgeColor = 'text-purple-400 font-bold animate-pulse';
-          saturados = fillVal === 88 ? 42 : (fillVal === 92 ? 45 : 36);
-          recogidaText = 'Hace 14 horas';
-        } else if (fillVal >= 60) {
-          stateClass = 'warning';
-          statusText = 'MODERADO';
-          badgeColor = 'text-amber-400 font-bold';
-          saturados = fillVal === 72 ? 18 : 12;
-          recogidaText = 'Hace 6 horas';
-        }
-
-        const isHovered = STATE.hoveredObjectId === id;
-        const isSelected = STATE.selectedObjectId === id;
-        
-        const isCriticalOrWarning = fillVal >= 60;
-        const shouldDisplay = isCriticalOrWarning || isHovered || isSelected;
-
-        if (shouldDisplay) {
-          const isExpanded = isHovered || isSelected;
-          el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+      // 1. Renderizar tooltips de Distritos (Residuos o Energía)
+      if ((isWaterWasteActive || STATE.layers.energyGrid) && STATE.wasteDistricts && STATE.wasteDistricts.features) {
+        STATE.wasteDistricts.features.forEach(f => {
+          const id = f.properties.id;
+          const name = f.properties.name;
+          const fillVal = f.properties.fillLevel;
+          const eff = f.properties.energyEfficiency || 80;
+          const centroid = f.properties.centroid;
           
-          el.style.left = `${x}px`;
-          el.style.top = `${y}px`;
-          el.style.display = 'block';
+          // Proyectar coordenadas a pixels en pantalla
+          const [x, y] = viewport.project(centroid);
+          
+          const tooltipId = `tooltip-${id}`;
+          activeTooltipIds.push(tooltipId);
 
-          if (isExpanded) {
-            el.innerHTML = `
-              <div class="text-left font-mono">
-                <strong class="text-xs text-purple-400 block border-b border-slate-800 pb-1 mb-1.5">📍 ${name}</strong>
-                <div class="space-y-1 text-[9.5px]">
-                  <div>Estado: <span class="${badgeColor}">${statusText}</span></div>
-                  <div>Llenado: <span class="text-slate-100 font-bold">${fillVal}%</span></div>
-                  <div>Saturados: <span class="text-red-400 font-bold">${saturados} uds</span></div>
-                  <div>Última Recogida: <span class="text-slate-300 font-medium">${recogidaText}</span></div>
-                </div>
-              </div>
-            `;
-          } else {
-            el.innerHTML = `<span class="font-bold text-slate-200">${name}</span>: <span class="${badgeColor}">${fillVal}%</span>`;
+          let el = document.getElementById(tooltipId);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = tooltipId;
+            container.appendChild(el);
           }
-        } else {
-          el.style.display = 'none';
-        }
-      });
+          el.onclick = (e) => {
+            e.stopPropagation();
+            selectMapAsset('district', id);
+          };
+
+          const isHovered = STATE.hoveredObjectId === id;
+          const isSelected = STATE.selectedObjectId === id;
+          const shouldDisplay = isSelected;
+
+          if (shouldDisplay) {
+            const isExpanded = isHovered || isSelected;
+            
+            let stateClass = 'healthy';
+            let badgeColor = 'text-emerald-400 font-bold';
+            let newHtml = '';
+
+            if (STATE.layers.energyGrid) {
+              // Modo de Visualización de Energía
+              const statusText = eff >= 80 ? 'OPTIMIZADO' : 'SOBREDEMANDA';
+              stateClass = eff >= 80 ? 'healthy' : 'warning';
+              badgeColor = eff >= 80 ? 'text-emerald-400 font-bold' : 'text-orange-400 font-bold';
+
+              let titleLabel = `Distrito: ${name}`;
+              if (name === 'Usera') {
+                titleLabel = 'Distrito: Usera (Área San Fermín)';
+              }
+
+              newHtml = isExpanded ? `
+                <div class="text-left font-mono" style="min-width: 200px;">
+                  <strong class="text-xs text-amber-400 block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1">
+                    <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> ${titleLabel}
+                  </strong>
+                  <div class="space-y-1 text-[9.5px]">
+                    <div>Estado: <span class="${badgeColor}">${statusText}</span></div>
+                    <div>Eficiencia: <span class="text-slate-100 font-bold">${eff}%</span></div>
+                    <div>Consumo Estimado: <span class="text-slate-350">${Math.round((100 - eff) * 1.5 + 40)} MWh</span></div>
+                    <div class="text-slate-500 text-[8px] mt-1 border-t border-slate-900/60 pt-1">
+                      Centroide: ${centroid[1].toFixed(4)}, ${centroid[0].toFixed(4)}
+                    </div>
+                  </div>
+                </div>
+              ` : `<span class="font-bold text-slate-200">${name}</span>: <span class="${badgeColor}">${eff}% Efic.</span>`;
+            } else {
+              // Modo de Visualización de Residuos (Water & Waste) - Idéntico al tooltip de hover
+              let statusText = '🟢 NOMINAL / ESTABLE';
+              badgeColor = 'text-emerald-400 font-bold';
+              let borderClass = 'border-emerald-500/40';
+              let bgGlow = 'rgba(16, 185, 129, 0.08)';
+
+              if (fillVal >= 80) {
+                statusText = '🔴 CRÍTICO / SATURADO';
+                badgeColor = 'text-red-450 font-bold animate-pulse';
+                borderClass = 'border-red-500/50';
+                bgGlow = 'rgba(239, 68, 68, 0.15)';
+                stateClass = 'critical';
+              } else if (fillVal >= 60) {
+                statusText = '🟠 ADVERTENCIA / LLENO';
+                badgeColor = 'text-orange-400 font-bold';
+                borderClass = 'border-orange-500/45';
+                bgGlow = 'rgba(249, 115, 22, 0.1)';
+                stateClass = 'warning';
+              }
+
+              // Desglose por Fracciones
+              const orgVal = Math.min(100, Math.round(fillVal * 1.18));
+              const envVal = Math.min(100, Math.round(fillVal * 1.32));
+              const papVal = Math.min(100, Math.round(fillVal * 0.65));
+              const vidVal = Math.min(100, Math.round(fillVal * 0.81));
+
+              const getScadaBarHtml = (pct) => {
+                const filledCount = Math.min(5, Math.round(pct / 20));
+                const col = pct >= 80 ? 'text-red-500 font-semibold' : (pct >= 60 ? 'text-orange-400 font-semibold' : (pct >= 40 ? 'text-emerald-400 font-semibold' : 'text-cyan-400 font-semibold'));
+                const filled = '▬'.repeat(filledCount);
+                const empty = '▭'.repeat(5 - filledCount);
+                return `<span class="${col}">${filled}</span><span class="text-slate-800">${empty}</span>`;
+              };
+
+              const orgBar = getScadaBarHtml(orgVal);
+              const envBar = getScadaBarHtml(envVal);
+              const papBar = getScadaBarHtml(papVal);
+              const vidBar = getScadaBarHtml(vidVal);
+
+              // Logística
+              const recogidaText = fillVal >= 80 ? 'Hace 14 horas' : (fillVal >= 60 ? 'Hace 6 horas' : 'Hace 2 horas');
+              const totalContenedores = 420;
+              const criticos = fillVal >= 80 ? Math.round(fillVal / 2) + 20 : (fillVal >= 60 ? Math.round(fillVal / 5) + 3 : Math.max(0, Math.round(fillVal / 15) - 1));
+
+              // Vector SVG Sparkline (100% estable, sin parpadeos ni retardos de renderizado)
+              const trendData = f.properties.trendData || [fillVal, fillVal, fillVal, fillVal, fillVal, fillVal, fillVal, fillVal];
+              const w = 261;
+              const h = 35;
+              const step = w / (trendData.length - 1);
+              let polyPoints = "";
+              let areaPath = `M 0,${h}`;
+              
+              trendData.forEach((val, idx) => {
+                const xVal = idx * step;
+                const yVal = h - (val / 100) * h;
+                polyPoints += `${xVal.toFixed(1)},${yVal.toFixed(1)} `;
+                areaPath += ` L ${xVal.toFixed(1)},${yVal.toFixed(1)}`;
+              });
+              areaPath += ` L ${w},${h} Z`;
+
+              const strokeColor = fillVal >= 80 ? '#ef4444' : (fillVal >= 60 ? '#f97316' : '#10b981');
+              const fillColor = fillVal >= 80 ? 'rgba(239, 68, 68, 0.12)' : (fillVal >= 60 ? 'rgba(249, 115, 22, 0.08)' : 'rgba(16, 185, 129, 0.06)');
+
+              const headerColor = fillVal >= 80 ? 'text-red-400' : (fillVal >= 60 ? 'text-orange-400' : 'text-emerald-400');
+
+              newHtml = `
+                <div class="p-3 bg-slate-950/95 border ${borderClass} text-slate-200 rounded font-sans text-left" style="font-size: 11.5px; width: 285px; box-shadow: 0 10px 25px rgba(0,0,0,0.9); z-index: 9999;">
+                  <strong class="text-[13.5px] font-mono ${headerColor} block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                    <i data-lucide="recycle" class="w-4 h-4 ${headerColor}"></i> Distrito: ${name}
+                  </strong>
+                  <div class="space-y-1">
+                    <div class="font-mono text-[11.5px]">Estado: <span class="${badgeColor}">${statusText} (${fillVal}%)</span></div>
+                  </div>
+                  
+                  <div class="space-y-2 text-[10.5px] font-mono border-t border-slate-850 pt-2.5 mt-2.5">
+                    <div class="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">Saturación por Fracción:</div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400 text-[10.5px]">Orgánica / Resto:</span>
+                      <span class="text-slate-200 font-bold text-[11px]">${orgVal}% <span class="font-mono text-sm ml-1.5">${orgBar}</span></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400 text-[10.5px]">Envases (Plástico):</span>
+                      <span class="text-slate-200 font-bold text-[11px]">${envVal}% <span class="font-mono text-sm ml-1.5">${envBar}</span></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400 text-[10.5px]">Papel y Cartón:</span>
+                      <span class="text-slate-200 font-bold text-[11px]">${papVal}% <span class="font-mono text-sm ml-1.5">${papBar}</span></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400 text-[10.5px]">Vidrio:</span>
+                      <span class="text-slate-200 font-bold text-[11px]">${vidVal}% <span class="font-mono text-sm ml-1.5">${vidBar}</span></span>
+                    </div>
+                  </div>
+
+                  <div class="border-t border-slate-850 pt-2.5 mt-2.5">
+                    <div class="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">Tendencia Semanal:</div>
+                    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display: block; overflow: visible;">
+                      <path d="${areaPath}" fill="${fillColor}" />
+                      <polyline points="${polyPoints}" fill="none" stroke="${strokeColor}" stroke-width="1.5" />
+                    </svg>
+                  </div>
+
+                  <div class="space-y-1 text-[9.5px] font-mono text-slate-400 border-t border-slate-900/60 pt-2.5 mt-2.5">
+                    <div class="flex items-center gap-1.5"><i data-lucide="truck" class="w-3.5 h-3.5 text-slate-500"></i> Última Recogida: <span class="text-slate-200">${recogidaText}</span></div>
+                    <div class="flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Contenedores Críticos: <span class="text-red-400 font-bold">${criticos}</span> / ${totalContenedores}</div>
+                  </div>
+                </div>
+              `;
+            }
+
+            el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+
+            if (el.style.display !== 'block') {
+              el.style.display = 'block';
+              el.classList.remove('animate-entrance');
+              void el.offsetWidth;
+              el.classList.add('animate-entrance');
+            }
+
+            if (el.getAttribute('data-html-cache') !== newHtml) {
+              el.setAttribute('data-html-cache', newHtml);
+              el.innerHTML = newHtml;
+              if (window.lucide) window.lucide.createIcons();
+            }
+          } else {
+            el.style.display = 'none';
+          }
+        });
+      }
 
       // 2. Renderizar tooltips de Nodos y Sensores de Agua
-      STATE.waterWasteNodes.forEach(node => {
+      if (isWaterWasteActive && STATE.waterWasteNodes) {
+        STATE.waterWasteNodes.forEach(node => {
         if (node.type !== 'water' && node.type !== 'water_control') return;
 
         const id = node.id;
@@ -1666,6 +2124,10 @@
           el.id = tooltipId;
           container.appendChild(el);
         }
+        el.onclick = (e) => {
+          e.stopPropagation();
+          selectMapAsset('water', id);
+        };
 
         // Determinar alerta ante incidencias
         let alertState = false;
@@ -1687,7 +2149,7 @@
         const isHovered = STATE.hoveredObjectId === id;
         const isSelected = STATE.selectedObjectId === id;
         
-        const shouldDisplay = alertState || isHovered || isSelected;
+        const shouldDisplay = isSelected;
 
         if (shouldDisplay) {
           const isExpanded = isHovered || isSelected;
@@ -1695,10 +2157,15 @@
           
           el.style.left = `${x}px`;
           el.style.top = `${y}px`;
-          el.style.display = 'block';
 
-          if (isExpanded) {
-            el.innerHTML = `
+          if (el.style.display !== 'block') {
+            el.style.display = 'block';
+            el.classList.remove('animate-entrance');
+            void el.offsetWidth;
+            el.classList.add('animate-entrance');
+          }
+
+          const newHtml = isExpanded ? `
               <div class="text-left font-mono" style="min-width: 180px;">
                 <strong class="text-xs text-cyan-400 block border-b border-slate-800 pb-1 mb-1.5">💧 ${name}</strong>
                 <div class="space-y-1 text-[9.5px]">
@@ -1707,14 +2174,393 @@
                   <div>Coordenadas: <span class="text-slate-400">${coords[0].toFixed(3)}, ${coords[1].toFixed(3)}</span></div>
                 </div>
               </div>
-            `;
-          } else {
-            el.innerHTML = `<span class="font-bold text-slate-200">${name}</span>: <span class="${badgeColor}">${alertState ? 'ALERTA' : 'OK'}</span>`;
+            ` : `<span class="font-bold text-slate-200">${name}</span>: <span class="${badgeColor}">${alertState ? 'ALERTA' : 'OK'}</span>`;
+
+          if (el.getAttribute('data-html-cache') !== newHtml) {
+            el.setAttribute('data-html-cache', newHtml);
+            el.innerHTML = newHtml;
           }
         } else {
           el.style.display = 'none';
         }
       });
+    }
+
+      // 3. Renderizar tooltips de Incidentes Activos (Solo con capa de Tráfico activa)
+      if (STATE.layers.traffic && STATE.activeIncidents) {
+        STATE.activeIncidents.forEach(inc => {
+          const id = inc.id;
+          const name = inc.title;
+          const coords = inc.coords;
+          const desc = inc.desc;
+          const severity = inc.severity;
+          const sector = inc.sector;
+          
+          const [x, y] = viewport.project(coords);
+          
+          const tooltipId = `tooltip-${id}`;
+          activeTooltipIds.push(tooltipId);
+
+          let el = document.getElementById(tooltipId);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = tooltipId;
+            container.appendChild(el);
+          }
+          el.onclick = (e) => {
+            e.stopPropagation();
+            selectMapAsset('incident', id);
+          };
+
+          const isHovered = STATE.hoveredObjectId === id;
+          const isSelected = STATE.selectedObjectId === id;
+          
+          // Todos los pilares de cualquier severidad/color se muestran de forma persistente mientras esté activa la capa de tráfico
+          const shouldDisplay = STATE.layers.traffic;
+
+          if (shouldDisplay) {
+            const isExpanded = isHovered || isSelected;
+            
+            let stateClass = 'info';
+            let badgeCol = 'text-blue-400 font-bold';
+            if (severity === 'critical') {
+              stateClass = 'critical';
+              badgeCol = 'text-red-400 font-bold animate-pulse';
+            } else if (severity === 'warning') {
+              stateClass = 'warning';
+              badgeCol = 'text-orange-400 font-bold';
+            }
+
+            el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+
+            if (el.style.display !== 'block') {
+              el.style.display = 'block';
+              el.classList.remove('animate-entrance');
+              void el.offsetWidth;
+              el.classList.add('animate-entrance');
+            }
+
+            const newHtml = isExpanded ? `
+                <div class="text-left font-mono" style="min-width: 200px;">
+                  <strong class="text-xs text-red-400 block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 ${severity === 'critical' ? 'animate-bounce text-red-500' : 'text-orange-500'}"></i> ${name}
+                  </strong>
+                  <div class="space-y-1 text-[9.5px]">
+                    <div>Sector: <span class="text-slate-100 uppercase">${sector}</span></div>
+                    <div>Severidad: <span class="${badgeCol} uppercase">${severity === 'critical' ? 'CRÍTICO' : 'AVISO'}</span></div>
+                    <div>Descripción: <span class="text-slate-350 block mt-0.5 leading-normal font-sans">${desc}</span></div>
+                    <div class="text-slate-500 text-[8px] mt-1 border-t border-slate-900/60 pt-1">
+                      Coordenadas: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}
+                    </div>
+                  </div>
+                </div>
+              ` : `<span class="font-bold text-red-450 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-3 h-3 text-red-500 animate-pulse"></i> ${name}</span>`;
+
+            if (el.getAttribute('data-html-cache') !== newHtml) {
+              el.setAttribute('data-html-cache', newHtml);
+              el.innerHTML = newHtml;
+              if (window.lucide) window.lucide.createIcons();
+            }
+          } else {
+            el.style.display = 'none';
+          }
+        });
+      }
+
+      // 4. Renderizar tooltips de Estaciones de Calidad del Aire
+      if (STATE.layers.airQuality && STATE.weatherStations) {
+        STATE.weatherStations.forEach(est => {
+          const id = est.id;
+          const name = est.name;
+          const coords = est.coords;
+          
+          const [x, y] = viewport.project(coords);
+          
+          const tooltipId = `tooltip-${id}`;
+          activeTooltipIds.push(tooltipId);
+
+          let el = document.getElementById(tooltipId);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = tooltipId;
+            container.appendChild(el);
+          }
+          el.onclick = (e) => {
+            e.stopPropagation();
+            selectMapAsset('weather', id);
+          };
+
+          const isHovered = STATE.hoveredObjectId === id;
+          const isSelected = STATE.selectedObjectId === id;
+          
+          // Se muestra únicamente cuando se pasa el cursor o se selecciona la estación
+          const shouldDisplay = isHovered || isSelected;
+
+          if (shouldDisplay) {
+            const isExpanded = isHovered || isSelected;
+            
+            let stateClass = 'healthy';
+            let badgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+            let badgeColor = 'text-emerald-400 font-bold';
+            
+            if (est.ica > 120) {
+              stateClass = 'critical';
+              badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30 glow-red animate-pulse';
+              badgeColor = 'text-red-400 font-bold';
+            } else if (est.ica > 80) {
+              stateClass = 'warning';
+              badgeClass = 'bg-orange-500/15 text-orange-400 border-orange-500/30 glow-orange';
+              badgeColor = 'text-orange-400 font-bold';
+            } else if (est.ica > 50) {
+              stateClass = 'warning';
+              badgeClass = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+              badgeColor = 'text-amber-400';
+            }
+
+            el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+
+            if (el.style.display !== 'block') {
+              el.style.display = 'block';
+              el.classList.remove('animate-entrance');
+              void el.offsetWidth;
+              el.classList.add('animate-entrance');
+            }
+
+            const newHtml = isExpanded ? `
+              <div class="text-left font-mono" style="min-width: 270px; max-width: 320px;">
+                <div class="border-b border-slate-800 pb-1.5 mb-2 flex justify-between items-center">
+                  <strong class="text-xs text-cyan-400 flex items-center gap-1.5">
+                    <i data-lucide="wind" class="w-3.5 h-3.5 text-teal-400"></i> ${name}
+                  </strong>
+                  <span class="px-1.5 py-0.5 rounded text-[8px] font-mono border font-semibold ${badgeClass}">
+                    ICA ${est.ica}
+                  </span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-[9px] mb-2 border-b border-slate-900/60 pb-1.5">
+                  <div>Estado: <span class="${badgeColor} uppercase">${est.status}</span></div>
+                  <div class="text-right text-slate-500">Coord: ${coords[1].toFixed(3)}, ${coords[0].toFixed(3)}</div>
+                </div>
+
+                <!-- Temperatura y Humedad Simétricos y Centrados -->
+                <div class="grid grid-cols-2 gap-4 mb-2 border-b border-slate-900/60 pb-2.5 text-center">
+                  <!-- Temp -->
+                  <div class="flex flex-col items-center">
+                    <div class="relative w-10 h-10 rounded-full border border-orange-500/30 flex flex-col items-center justify-center bg-orange-950/10 shadow-[0_0_8px_rgba(249,115,22,0.1)]">
+                      <i data-lucide="thermometer" class="w-3.5 h-3.5 text-orange-400 mb-0.5"></i>
+                      <span class="text-[8.5px] font-bold text-orange-400 leading-none">${est.temp}°C</span>
+                    </div>
+                    <div class="text-[7.5px] text-slate-400 mt-1.5 uppercase tracking-wider font-semibold">Temperatura</div>
+                  </div>
+                  
+                  <!-- Humedad -->
+                  <div class="flex flex-col items-center">
+                    <div class="relative w-10 h-10 rounded-full border border-sky-500/30 flex flex-col items-center justify-center bg-sky-950/10 shadow-[0_0_8px_rgba(56,189,248,0.1)]">
+                      <i data-lucide="droplet" class="w-3.5 h-3.5 text-sky-400 mb-0.5"></i>
+                      <span class="text-[8.5px] font-bold text-sky-400 leading-none">${est.humidity}%</span>
+                    </div>
+                    <div class="text-[7.5px] text-slate-400 mt-1.5 uppercase tracking-wider font-semibold">Humedad</div>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5 border-b border-slate-900/60 pb-2 mb-2">
+                  <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Desglose de Contaminantes</div>
+                  
+                  <div>
+                    <div class="flex justify-between text-[8px] text-slate-350">
+                      <span>NO₂ (Tránsito)</span>
+                      <span class="${est.no2 > 50 ? 'text-orange-400 font-bold' : 'text-slate-400'}">${est.no2} µg/m³</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-1.5 rounded overflow-hidden mt-0.5 border border-slate-900">
+                      <div class="bg-amber-500 h-full" style="width: ${Math.min(100, (est.no2 / 100) * 100)}%"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="flex justify-between text-[8px] text-slate-350">
+                      <span>PM2.5 (Partículas)</span>
+                      <span class="${est.pm25 > 25 ? 'text-red-400 font-bold' : 'text-slate-400'}">${est.pm25} µg/m³</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-1.5 rounded overflow-hidden mt-0.5 border border-slate-900">
+                      <div class="bg-red-500 h-full" style="width: ${Math.min(100, (est.pm25 / 50) * 100)}%"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="flex justify-between text-[8px] text-slate-350">
+                      <span>O₃ (Ozono troposférico)</span>
+                      <span class="${est.o3 > 50 ? 'text-cyan-400 font-bold' : 'text-slate-400'}">${est.o3} µg/m³</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-1.5 rounded overflow-hidden mt-0.5 border border-slate-900">
+                      <div class="bg-cyan-500 h-full" style="width: ${Math.min(100, (est.o3 / 120) * 100)}%"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Tendencia ICA (24h)</div>
+                <div id="chart-air-24h-${est.id}" style="width: 260px; height: 80px; margin: 0 auto;"></div>
+              </div>
+            ` : `
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-200">${est.name.replace('Estación ', '')}</span>: 
+                <span class="${badgeColor}">ICA ${est.ica}</span>
+              </div>
+            `;
+
+            if (el.getAttribute('data-html-cache') !== newHtml) {
+              el.setAttribute('data-html-cache', newHtml);
+              el.innerHTML = newHtml;
+              if (window.lucide) window.lucide.createIcons();
+              
+              if (isExpanded) {
+                setTimeout(() => {
+                  const chartDom = document.getElementById(`chart-air-24h-${est.id}`);
+                  if (chartDom) {
+                    let myChart = echarts.getInstanceByDom(chartDom);
+                    if (!myChart) {
+                      myChart = echarts.init(chartDom, 'dark', { renderer: 'canvas' });
+                    }
+                    
+                    const baseIca = est.ica;
+                    const data24h = [];
+                    for (let h = 0; h < 24; h++) {
+                      const trafficFactor = (h === 8 || h === 9 || h === 17 || h === 18 || h === 19) ? 1.3 : 0.85;
+                      data24h.push(Math.round(baseIca * trafficFactor * (0.9 + Math.random() * 0.2)));
+                    }
+
+                    myChart.setOption({
+                      backgroundColor: 'transparent',
+                      grid: { left: 15, right: 10, top: 10, bottom: 15 },
+                      xAxis: {
+                        type: 'category',
+                        data: Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0') + 'h'),
+                        axisLabel: {
+                          color: '#475569',
+                          fontSize: 7.5,
+                          interval: (index, value) => {
+                            return value === '00h' || value === '12h' || value === '23h';
+                          }
+                        },
+                        axisLine: { lineStyle: { color: '#1e293b' } },
+                        axisTick: { show: false }
+                      },
+                      yAxis: {
+                        type: 'value',
+                        axisLabel: { show: false },
+                        splitLine: { lineStyle: { color: '#0f172a' } }
+                      },
+                      series: [{
+                        data: data24h,
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: '#2dd4bf', width: 1.5 },
+                        areaStyle: {
+                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(45, 212, 191, 0.25)' },
+                            { offset: 1, color: 'rgba(45, 212, 191, 0)' }
+                          ])
+                        }
+                      }]
+                    });
+                  }
+                }, 40);
+              }
+            }
+          } else {
+            el.style.display = 'none';
+          }
+        });
+      }
+
+      // 5. Renderizar tooltips de Activos de Energía
+      if (STATE.layers.energyGrid && STATE.energyAssets) {
+        STATE.energyAssets.forEach(ea => {
+          const id = ea.id;
+          const name = ea.name;
+          const coords = ea.coords;
+          
+          const [x, y] = viewport.project(coords);
+          
+          const tooltipId = `tooltip-${id}`;
+          activeTooltipIds.push(tooltipId);
+
+          let el = document.getElementById(tooltipId);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = tooltipId;
+            container.appendChild(el);
+          }
+          el.onclick = (e) => {
+            e.stopPropagation();
+            selectMapAsset('energy', id);
+          };
+
+          const isHovered = STATE.hoveredObjectId === id;
+          const isSelected = STATE.selectedObjectId === id;
+          const shouldDisplay = isHovered || isSelected;
+
+          if (shouldDisplay) {
+            const isExpanded = isHovered || isSelected;
+            const isAlarm = ea.color[0] > 200;
+            
+            let stateClass = isAlarm ? 'critical' : 'healthy';
+            let badgeClass = isAlarm ? 'bg-red-500/15 text-red-400 border-red-500/30 glow-red animate-pulse' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+            let badgeColor = isAlarm ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold';
+
+            el.className = `district-card-tooltip ${stateClass} ${isExpanded ? 'expanded' : ''}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+
+            if (el.style.display !== 'block') {
+              el.style.display = 'block';
+              el.classList.remove('animate-entrance');
+              void el.offsetWidth;
+              el.classList.add('animate-entrance');
+            }
+
+            const newHtml = isExpanded ? `
+              <div class="text-left font-mono" style="min-width: 240px; max-width: 280px;">
+                <div class="border-b border-slate-800 pb-1.5 mb-2 flex justify-between items-center">
+                  <strong class="text-xs text-amber-400 flex items-center gap-1.5">
+                    <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> ${name}
+                  </strong>
+                  <span class="px-1.5 py-0.5 rounded text-[8px] font-mono border font-semibold ${badgeClass}">
+                    ${ea.type.toUpperCase()}
+                  </span>
+                </div>
+                
+                <div class="space-y-1.5 text-[9px]">
+                  <div>Estado: <span class="${badgeColor} uppercase">${ea.status}</span></div>
+                  <div>Generación / Carga: <span class="text-slate-100 font-bold">${ea.generation}</span></div>
+                  <div>Capacidad de Carga: <span class="text-slate-350">${ea.load}</span></div>
+                  <div class="text-slate-500 text-[8px] mt-1 border-t border-slate-900/60 pt-1">
+                    Coordenadas: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <div class="flex items-center gap-1.5 font-mono text-[9px]">
+                <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i>
+                <span class="font-bold text-slate-200">${name.replace('Subestación Eléctrica ', '').replace('Parque Fotovoltaico ', '')}</span>: 
+                <span class="${badgeColor}">${ea.status}</span>
+              </div>
+            `;
+
+            if (el.getAttribute('data-html-cache') !== newHtml) {
+              el.setAttribute('data-html-cache', newHtml);
+              el.innerHTML = newHtml;
+              if (window.lucide) window.lucide.createIcons();
+            }
+          } else {
+            el.style.display = 'none';
+          }
+        });
+      }
 
       // 3. Eliminar tooltips obsoletos en el contenedor
       Array.from(container.children).forEach(child => {
@@ -1734,8 +2580,10 @@
         deckglInstance = null;
       }
       
-      // Limpiar contenedor
-      document.getElementById('deck-map-container').innerHTML = '';
+      // Limpiar contenedor y deshabilitar menú contextual para rotar con clic derecho
+      const mapContainer = document.getElementById('deck-map-container');
+      mapContainer.innerHTML = '';
+      mapContainer.addEventListener('contextmenu', e => e.preventDefault());
 
       // Luces y sombras tridimensionales físicas
       const ambientLight = new deck.AmbientLight({
@@ -1746,7 +2594,7 @@
         color: [255, 255, 255],
         intensity: 1.6,
         direction: [-3, -9, -1],
-        _shadow: true
+        _shadow: false
       });
       const lightingEffect = new deck.LightingEffect({ ambientLight, directionalLight });
 
@@ -1764,10 +2612,25 @@
               STATE.selectedObjectId = info.object.properties.id;
               STATE.selectedObjectType = 'district';
             }
+            // Si es una estación de calidad del aire (ColumnLayer)
+            else if (info.object.temp !== undefined && info.object.humidity !== undefined) {
+              STATE.selectedObjectId = info.object.id;
+              STATE.selectedObjectType = 'weather';
+            }
             // Si es un nodo de agua (ScatterplotLayer)
             else if (info.object.name && info.object.status && info.object.type === 'water') {
               STATE.selectedObjectId = info.object.id || info.object.name;
               STATE.selectedObjectType = 'water';
+            }
+            // Si es un activo de energía (ScatterplotLayer)
+            else if (info.object.type === 'energy') {
+              STATE.selectedObjectId = info.object.id;
+              STATE.selectedObjectType = 'energy';
+            }
+            // Si es un incidente (LineLayer o ScatterplotLayer)
+            else if (info.object.type === 'incident') {
+              STATE.selectedObjectId = info.object.id;
+              STATE.selectedObjectType = 'incident';
             } else {
               STATE.selectedObjectId = null;
               STATE.selectedObjectType = null;
@@ -1782,11 +2645,88 @@
         controller: true,
         effects: [lightingEffect],
         getTooltip: ({object}) => {
+          if (STATE.selectedObjectId) return null;
           if (!object) return null;
           
-          // 1. Hover en un Nodo de Agua (ScatterplotLayer) -> Devolución de null para usar el tooltip persistente del DOM
-          if (object.name && object.status && object.type === 'water') {
+          // 1. Hover en un Nodo de Agua (ScatterplotLayer) -> Tooltip nativo cursor-following
+          if (STATE.layers.waterWaste && object.name && object.status && object.type === 'water') {
+            let alertState = false;
+            STATE.activeIncidents.forEach(inc => {
+              const dist = Math.hypot(object.coords[0] - inc.coords[0], object.coords[1] - inc.coords[1]);
+              if (dist < 0.02) alertState = true;
+            });
+            let colorClass = alertState ? 'text-orange-400 font-bold' : 'text-cyan-400 font-bold';
+            
+            return {
+              html: `<div class="p-2.5 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 220px;">
+                       <strong class="text-xs font-mono text-cyan-400 block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                         <i data-lucide="droplet" class="w-3.5 h-3.5 text-cyan-400"></i> ${object.name}
+                       </strong>
+                       <p class="font-mono">Estado: <span class="${colorClass}">${object.status}</span></p>
+                     </div>`
+            };
+          }
+          if (object.temp !== undefined && object.humidity !== undefined) {
             return null;
+          }
+          
+          // 1.1 Hover en una Celda Hexagonal de Calidad del Aire (HexagonLayer)
+          if (object.points && object.index !== undefined) {
+            if (object.points.length === 0) return null;
+            
+            let sum = 0;
+            let count = 0;
+            for (let i = 0; i < object.points.length; i++) {
+              const p = object.points[i];
+              const raw = p.source || p;
+              if (raw && raw.weight !== undefined) {
+                sum += raw.weight;
+                count++;
+              }
+            }
+            
+            if (count === 0) {
+              return {
+                html: `<div class="p-2.5 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 190px;">
+                         <strong class="text-xs font-mono text-cyan-400 block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                           <i data-lucide="wind" class="w-3.5 h-3.5 text-teal-400"></i> Celda Atmosférica
+                         </strong>
+                         <p class="font-mono text-slate-400">Cargando datos...</p>
+                       </div>`
+              };
+            }
+            
+            const avgWeight = sum / count;
+            const icaVal = Math.round(avgWeight * 200);
+            
+            // Cruce geográfico local de alta velocidad (Opción A)
+            const firstPt = object.points[0];
+            const rawPt = firstPt.source || firstPt;
+            const districtName = rawPt && rawPt.coords ? getDistrictForPoint(rawPt.coords[0], rawPt.coords[1]) : null;
+            const titleLabel = districtName ? `Distrito: ${districtName}` : 'Celda Atmosférica';
+            
+            let colorClass = 'text-emerald-450';
+            let statusText = 'Excelente / Limpio';
+            if (icaVal > 120) {
+              colorClass = 'text-red-400 font-bold animate-pulse';
+              statusText = 'Crítico / Alerta';
+            } else if (icaVal > 80) {
+              colorClass = 'text-orange-400 font-bold';
+              statusText = 'Moderado / Malo';
+            } else if (icaVal > 50) {
+              colorClass = 'text-yellow-400';
+              statusText = 'Regular / Aceptable';
+            }
+            
+            return {
+              html: `<div class="p-2.5 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 225px;">
+                       <strong class="text-xs font-mono text-cyan-400 block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-teal-450"></i> ${titleLabel}
+                       </strong>
+                       <p class="font-mono">Índice Aire (ICA): <span class="${colorClass}">${icaVal}</span></p>
+                       <p class="font-mono">Estado: <span class="${colorClass}">${statusText}</span></p>
+                     </div>`
+            };
           }
           
           // 1.2. Hover en un Nodo de Residuos (Pines 3D de ColumnLayer) -> Tooltip nativo
@@ -1801,12 +2741,124 @@
             };
           }
 
-          // 1.5 Hover en un barrio de recolección de residuos (GeoJsonLayer)
-          if (object.properties && object.properties.fillLevel !== undefined) {
-            return null; // El tooltip flotante persistente en el DOM ya se encarga de mostrar la información
+          // 1.5 Hover en un barrio de recolección de residuos (GeoJsonLayer) -> Tooltip nativo cursor-following
+          if (STATE.layers.waterWaste && object.properties && object.properties.fillLevel !== undefined) {
+            const fillVal = object.properties.fillLevel;
+            const name = object.properties.name;
+            const id = object.properties.id;
+
+            let statusText = '🟢 NOMINAL / ESTABLE';
+            let colorClass = 'text-emerald-400 font-bold';
+            let borderClass = 'border-emerald-500/40';
+            let bgGlow = 'rgba(16, 185, 129, 0.08)';
+
+            if (fillVal >= 80) {
+              statusText = '🔴 CRÍTICO / SATURADO';
+              colorClass = 'text-red-450 font-bold animate-pulse';
+              borderClass = 'border-red-500/50';
+              bgGlow = 'rgba(239, 68, 68, 0.15)';
+            } else if (fillVal >= 60) {
+              statusText = '🟠 ADVERTENCIA / LLENO';
+              colorClass = 'text-orange-400 font-bold';
+              borderClass = 'border-orange-500/45';
+              bgGlow = 'rgba(249, 115, 22, 0.1)';
+            }
+
+            // Desglose por Fracciones
+            const orgVal = Math.min(100, Math.round(fillVal * 1.18));
+            const envVal = Math.min(100, Math.round(fillVal * 1.32));
+            const papVal = Math.min(100, Math.round(fillVal * 0.65));
+            const vidVal = Math.min(100, Math.round(fillVal * 0.81));
+
+            const getScadaBarHtml = (pct) => {
+              const filledCount = Math.min(5, Math.round(pct / 20));
+              const col = pct >= 80 ? 'text-red-500 font-semibold' : (pct >= 60 ? 'text-orange-400 font-semibold' : (pct >= 40 ? 'text-emerald-400 font-semibold' : 'text-cyan-400 font-semibold'));
+              const filled = '▬'.repeat(filledCount);
+              const empty = '▭'.repeat(5 - filledCount);
+              return `<span class="${col}">${filled}</span><span class="text-slate-800">${empty}</span>`;
+            };
+
+            const orgBar = getScadaBarHtml(orgVal);
+            const envBar = getScadaBarHtml(envVal);
+            const papBar = getScadaBarHtml(papVal);
+            const vidBar = getScadaBarHtml(vidVal);
+
+            // Logística
+            const recogidaText = fillVal >= 80 ? 'Hace 14 horas' : (fillVal >= 60 ? 'Hace 6 horas' : 'Hace 2 horas');
+            const totalContenedores = 420;
+            const criticos = fillVal >= 80 ? Math.round(fillVal / 2) + 20 : (fillVal >= 60 ? Math.round(fillVal / 5) + 3 : Math.max(0, Math.round(fillVal / 15) - 1));
+
+            // Vector SVG Sparkline (100% estable, sin parpadeos ni retardos de renderizado)
+            const trendData = object.properties.trendData || [fillVal, fillVal, fillVal, fillVal, fillVal, fillVal, fillVal, fillVal];
+            const w = 261;
+            const h = 35;
+            const step = w / (trendData.length - 1);
+            let polyPoints = "";
+            let areaPath = `M 0,${h}`;
+            
+            trendData.forEach((val, idx) => {
+              const xVal = idx * step;
+              const yVal = h - (val / 100) * h;
+              polyPoints += `${xVal.toFixed(1)},${yVal.toFixed(1)} `;
+              areaPath += ` L ${xVal.toFixed(1)},${yVal.toFixed(1)}`;
+            });
+            areaPath += ` L ${w},${h} Z`;
+
+            const strokeColor = fillVal >= 80 ? '#ef4444' : (fillVal >= 60 ? '#f97316' : '#10b981');
+            const fillColor = fillVal >= 80 ? 'rgba(239, 68, 68, 0.12)' : (fillVal >= 60 ? 'rgba(249, 115, 22, 0.08)' : 'rgba(16, 185, 129, 0.06)');
+
+            const headerColor = fillVal >= 80 ? 'text-red-400' : (fillVal >= 60 ? 'text-orange-400' : 'text-emerald-400');
+
+            return {
+              html: `<div class="p-3 bg-slate-950/95 border ${borderClass} text-slate-200 rounded font-sans text-left" style="font-size: 11.5px; width: 285px; box-shadow: 0 10px 25px rgba(0,0,0,0.9); z-index: 9999;">
+                       <strong class="text-[13.5px] font-mono ${headerColor} block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                         <i data-lucide="recycle" class="w-4 h-4 ${headerColor}"></i> Distrito: ${name}
+                       </strong>
+                       <div class="space-y-1">
+                         <div class="font-mono text-[11.5px]">Estado: <span class="${colorClass}">${statusText} (${fillVal}%)</span></div>
+                       </div>
+                       
+                       <div class="space-y-2 text-[10.5px] font-mono border-t border-slate-850 pt-2.5 mt-2.5">
+                         <div class="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">Saturación por Fracción:</div>
+                         <div class="flex items-center justify-between">
+                           <span class="text-slate-400 text-[10.5px]">Orgánica / Resto:</span>
+                           <span class="text-slate-200 font-bold text-[11px]">${orgVal}% <span class="font-mono text-sm ml-1.5">${orgBar}</span></span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                           <span class="text-slate-400 text-[10.5px]">Envases (Plástico):</span>
+                           <span class="text-slate-200 font-bold text-[11px]">${envVal}% <span class="font-mono text-sm ml-1.5">${envBar}</span></span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                           <span class="text-slate-400 text-[10.5px]">Papel y Cartón:</span>
+                           <span class="text-slate-200 font-bold text-[11px]">${papVal}% <span class="font-mono text-sm ml-1.5">${papBar}</span></span>
+                         </div>
+                         <div class="flex items-center justify-between">
+                           <span class="text-slate-400 text-[10.5px]">Vidrio:</span>
+                           <span class="text-slate-200 font-bold text-[11px]">${vidVal}% <span class="font-mono text-sm ml-1.5">${vidBar}</span></span>
+                         </div>
+                       </div>
+
+                       <div class="border-t border-slate-850 pt-2.5 mt-2.5">
+                         <div class="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">Tendencia Semanal:</div>
+                         <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display: block; overflow: visible;">
+                           <path d="${areaPath}" fill="${fillColor}" />
+                           <polyline points="${polyPoints}" fill="none" stroke="${strokeColor}" stroke-width="1.5" />
+                         </svg>
+                       </div>
+
+                       <div class="space-y-1 text-[9.5px] font-mono text-slate-400 border-t border-slate-900/60 pt-2.5 mt-2.5">
+                         <div class="flex items-center gap-1.5"><i data-lucide="truck" class="w-3.5 h-3.5 text-slate-500"></i> Última Recogida: <span class="text-slate-200">${recogidaText}</span></div>
+                         <div class="flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Contenedores Críticos: <span class="text-red-400 font-bold">${criticos}</span> / ${totalContenedores}</div>
+                       </div>
+                     </div>`
+            };
           }
 
           // 2. Hover en un prisma de Alerta o rayo láser 3D
+          if (object.type === 'incident') {
+            return null;
+          }
+          
           if (object.title) {
             let colText = 'text-cyan-400';
             if (object.color && object.color[0] > 200) {
@@ -1834,16 +2886,32 @@
             };
           }
 
-          // 4. Hover en un Municipio de Energía (GeoJsonLayer)
-          if (object.properties && object.properties.efficiency !== undefined) {
-            let eff = object.properties.efficiency;
+          // 4. Hover en un Distrito de Energía (GeoJsonLayer extruido)
+          if (STATE.layers.energyGrid && object.properties && object.properties.energyEfficiency !== undefined) {
+            let eff = object.properties.energyEfficiency;
+            let statusText = eff >= 80 ? 'Optimizado / Bajo Consumo' : 'Sobredemanda / Ineficiente';
+            let colorClass = eff >= 80 ? 'text-emerald-400' : 'text-orange-400 font-bold';
+            
+            const name = object.properties.name;
+            let titleLabel = `Distrito: ${name}`;
+            if (name === 'Usera') {
+              titleLabel = 'Distrito: Usera (Área San Fermín)';
+            }
+            
             return {
-              html: `<div class="p-2 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px;">
-                       <strong class="text-xs font-mono text-amber-400 block border-b border-slate-850 pb-1 mb-1">${object.properties.name}</strong>
-                       <p class="font-mono">Eficiencia Energética: <span class="text-cyan-400 font-bold">${eff}%</span></p>
-                       <p class="text-[8px] text-slate-500 mt-1">Ahorro en Alumbrado Municipal</p>
+              html: `<div class="p-2.5 bg-slate-950/95 border border-slate-800 text-slate-200 rounded font-sans" style="font-size: 10px; width: 250px;">
+                       <strong class="text-xs font-mono text-amber-400 block border-b border-slate-800 pb-1 mb-1.5 flex items-center gap-1.5">
+                         <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> ${titleLabel}
+                       </strong>
+                       <p class="font-mono">Eficiencia Energética: <span class="${colorClass}">${eff}%</span></p>
+                       <p class="font-mono">Estado: <span class="${colorClass}">${statusText}</span></p>
                      </div>`
             };
+          }
+
+          // 4.1 Hover en un Activo de Energía (ScatterplotLayer)
+          if (object.type === 'energy') {
+            return null; // El tooltip persistente del DOM se encarga de mostrar la información
           }
 
           return null;
@@ -1880,7 +2948,6 @@
           maxRequests: 20,              // Mayor número de peticiones concurrentes (HTTP/2 multiplexing)
           maxCacheSize: 150,            // Cachear más azulejos en memoria local para evitar recargas constantes al arrastrar
           debounceTime: 100,            // Evitar disparar peticiones intermedias durante zoom/pan rápidos
-          extent: [-4.6, 39.8, -3.0, 41.2], // Limitar a la Comunidad de Madrid para no descargar zonas irrelevantes
           refinementStrategy: 'best-available', // Utilizar tiles de otros niveles de zoom mientras se descargan las nuevas
           renderSubLayers: props => {
             const {
@@ -1895,7 +2962,15 @@
           }
         }));
 
-        // 2. CONTORNO DE LA CIUDAD DE MADRID (GeoJsonLayer) - Brillo neón cian
+      cachedStaticLayers = layers;
+      return cachedStaticLayers;
+    }
+
+    function getDynamicLayers() {
+      const layers = [];
+
+      // Contorno cian de límites de distritos de Madrid (Solo visible si Agua/Residuos, Aire o Energía están activos)
+      if (STATE.layers.waterWaste || STATE.layers.airQuality || STATE.layers.energyGrid) {
         layers.push(new deck.GeoJsonLayer({
           id: 'madrid-boundary-layer',
           data: '/madrid_districts.geojson',
@@ -1906,13 +2981,7 @@
           getLineWidth: 2.2,
           lineWidthMinPixels: 1.5
         }));
-
-      cachedStaticLayers = layers;
-      return cachedStaticLayers;
-    }
-
-    function getDynamicLayers() {
-      const layers = [];
+      }
 
       // 1. CAPA DE TRÁFICO DINÁMICO EN MOVIMIENTO (TripsLayer)
       if (STATE.layers.traffic) {
@@ -1921,23 +2990,8 @@
         const congestedVehicles = [];
 
         STATE.tripsData.forEach(trip => {
-          let state = trip.defaultState;
+          const state = trip.currentState || trip.defaultState;
           
-          // Verificar si hay algún incidente cerca de la traza
-          STATE.activeIncidents.forEach(inc => {
-            const incCoords = inc.coords;
-            trip.path.forEach(pt => {
-              const dist = Math.hypot(pt[0] - incCoords[0], pt[1] - incCoords[1]);
-              if (dist < 0.018) { // Si está a menos de ~1.8km del incidente
-                if (inc.severity === 'critical') {
-                  state = 'congested';
-                } else if (inc.severity === 'warning' && state !== 'congested') {
-                  state = 'slow';
-                }
-              }
-            });
-          });
-
           if (state === 'congested') {
             congestedVehicles.push(trip);
           } else if (state === 'slow') {
@@ -2042,21 +3096,29 @@
           dashJustified: true
         }));
 
-        // 2.2 Sombreado de Límites de Barrio de Residuos (GeoJsonLayer con opacidad muy baja)
+        // 2.2 Sombreado de Límites de Barrio de Residuos (GeoJsonLayer extruido de relieve bajo)
         layers.push(new deck.GeoJsonLayer({
           id: 'waste-districts-layer',
           data: STATE.wasteDistricts || { type: 'FeatureCollection', features: [] },
           filled: true,
           stroked: true,
+          extruded: true,
+          wireframe: true,
+          autoHighlight: true,
+          highlightColor: [0, 240, 255, 65], // Brillo highlight cian sutil
+          getElevation: f => {
+            const fillVal = f.properties.fillLevel || 30;
+            return fillVal * 4.5 + 15; // De 150m a 430m de altura virtual sutil
+          },
           getFillColor: f => {
             const fillVal = f.properties.fillLevel;
-            if (fillVal >= 80) return [189, 91, 255, 30]; // Crítico: morado neón
-            if (fillVal >= 60) return [249, 115, 22, 25];  // Aviso: naranja
-            return [16, 185, 129, 15]; // Saludable: verde
+            if (fillVal >= 80) return [239, 68, 68, 40]; // Crítico: rojo translúcido
+            if (fillVal >= 60) return [249, 115, 22, 28];  // Aviso: naranja
+            return [16, 185, 129, 16]; // Saludable: verde
           },
           getLineColor: f => {
             const fillVal = f.properties.fillLevel;
-            if (fillVal >= 80) return [189, 91, 255, 140]; 
+            if (fillVal >= 80) return [239, 68, 68, 160]; 
             if (fillVal >= 60) return [249, 115, 22, 120];
             return [16, 185, 129, 90];
           },
@@ -2068,6 +3130,11 @@
             if (STATE.hoveredObjectId !== id) {
               STATE.hoveredObjectId = id;
               updatePersistentTooltips();
+            }
+          },
+          onClick: info => {
+            if (info.object && info.object.properties) {
+              selectMapAsset('district', info.object.properties.id);
             }
           }
         }));
@@ -2202,96 +3269,157 @@
         }
       }
 
-      // 3. CAPA DE CALIDAD DEL AIRE ATMOSFÉRICA (HeatmapLayer + GeoJsonLayer)
+      // 3. CAPAS DE CALIDAD DEL AIRE ATMOSFÉRICA (HexagonLayer + TripsLayer Viento + ColumnLayer Estaciones)
       if (STATE.layers.airQuality) {
-        // 3.1 Mapa de calor difuso floating por debajo
-        layers.push(new deck.HeatmapLayer({
-          id: 'pollution-heatmap',
-          data: STATE.pollutionPoints,
-          getPosition: d => d.coords,
-          getWeight: d => d.weight,
-          radiusPixels: 90,
-          intensity: 1.2,
-          threshold: 0.05,
-          colorRange: [
-            [16, 185, 129, 0],   
-            [16, 185, 129, 30],  
-            [250, 200, 10, 60],  
-            [249, 115, 22, 90],  
-            [189, 91, 255, 130]  
-          ]
-        }));
+        // 3.1 Malla Hexagonal 3D (HexagonLayer) - Representa el aire continuo
+        if (STATE.pollutionGridPoints) {
+          layers.push(new deck.HexagonLayer({
+            id: 'air-quality-hexagon-3d',
+            data: STATE.pollutionGridPoints,
+            getPosition: d => d.coords,
+            // Exagerar diferencia: picos altos para ICA > 40 (weight > 0.2), plano (0m) para zonas limpias (ICA <= 40)
+            getElevationValue: points => Math.pow(Math.max(0, points[0].weight - 0.20) / 0.80, 1.8),
+            getColorValue: points => points[0].weight,
+            elevationScale: 3800, 
+            elevationRange: [0, 1],
+            radius: 180, // Hexágonos finos y discretos de 180m de radio
+            extruded: true,
+            opacity: 0.32, // Transparencia extrema (cristalina/holográfica) para no ocultar la ciudad
+            coverage: 0.88,
+            colorRange: [
+              [0, 240, 255],     // Cian neón (Excelente)
+              [0, 150, 255],     // Azul (Aceptable)
+              [250, 200, 10],    // Amarillo (Regular)
+              [249, 115, 22],    // Naranja (Malo)
+              [239, 68, 68],     // Rojo (Muy Malo)
+              [189, 91, 255]     // Morado/Magenta (Crítico)
+            ],
+            upperPercentile: 100,
+            pickable: true,
+            material: false // Desactiva luces y sombras para un look puramente holográfico auto-iluminado
+          }));
+        }
 
-        // 3.2 Zonas perimetrales transparentes
-        const zonesGeoJson = {
-          type: 'FeatureCollection',
-          features: STATE.airQualityZones.features.map(f => {
-            let ica = f.properties.defaultIca;
-            STATE.activeIncidents.forEach(inc => {
-              const firstPt = f.geometry.coordinates[0][0];
-              const dist = Math.hypot(firstPt[0] - inc.coords[0], firstPt[1] - inc.coords[1]);
-              if (dist < 0.1) { 
-                ica += 50; 
+        // 3.2 Viento: Partículas cinéticas vectoriales (TripsLayer Viento)
+        if (STATE.windLines) {
+          layers.push(new deck.TripsLayer({
+            id: 'air-quality-wind-trips',
+            data: STATE.windLines,
+            getPath: d => d.path,
+            getTimestamps: d => d.timestamps,
+            getColor: [255, 255, 255], 
+            opacity: 0.45,
+            widthMinPixels: 1.5,
+            trailLength: 75,
+            currentTime: (STATE.animationTime.fluid * 2.0) % 500
+          }));
+        }
+
+        // 3.3 Nodos Físicos de Estaciones Meteorológicas (ColumnLayer)
+        if (STATE.weatherStations) {
+          layers.push(new deck.ColumnLayer({
+            id: 'air-quality-stations-3d',
+            data: STATE.weatherStations,
+            diskResolution: 6,
+            radius: 135,
+            extruded: true,
+            pickable: true,
+            onHover: info => {
+              const id = info.object ? info.object.id : null;
+              if (STATE.hoveredObjectId !== id) {
+                STATE.hoveredObjectId = id;
+                updatePersistentTooltips();
               }
-            });
-
-            let color = [16, 185, 129, 12]; 
-            let status = 'Excelente';
-            if (ica > 80) {
-              color = [249, 115, 22, 25]; 
-              status = 'Inversión Térmica / Moderado';
-            } else if (ica > 50) {
-              color = [250, 200, 10, 20]; 
-              status = 'Regular';
-            }
-
-            return {
-              ...f,
-              properties: {
-                ...f.properties,
-                ica: ica,
-                color: color,
-                status: status
-              }
-            };
-          })
-        };
-
-        layers.push(new deck.GeoJsonLayer({
-          id: 'air-quality-zones-layer',
-          data: zonesGeoJson,
-          filled: true,
-          stroked: true,
-          getFillColor: f => f.properties.color,
-          getLineColor: [0, 240, 255, 25], 
-          getLineWidth: 1,
-          lineWidthMinPixels: 0.5,
-          pickable: true
-        }));
+            },
+            getPosition: d => d.coords,
+            getFillColor: d => [...d.color, 225],
+            getElevation: d => d.ica * 4.5 + 150,
+            material: false // Tubos de luz neón sin sombras arrojadas
+          }));
+        }
       }
 
-      // 4. CAPA DE CONSUMO ENERGÉTICO POR ZONAS (Distritos con opacidad muy baja)
+      // 4. CAPA DE CONSUMO ENERGÉTICO POR DISTRITOS (Mapa de Coropletas Extruido & Pines de Activos)
       if (STATE.layers.energyGrid) {
+        // 4.1 Consumo por Zonas (Extrusión baja en distritos reales)
         layers.push(new deck.GeoJsonLayer({
-          id: 'energy-municipalities-layer',
-          data: STATE.energyMunicipalities,
+          id: 'energy-districts-3d',
+          data: STATE.wasteDistricts || { type: 'FeatureCollection', features: [] },
           filled: true,
           stroked: true,
-          getFillColor: f => {
-            const eff = f.properties.efficiency;
-            if (eff >= 85) return [16, 185, 129, 25]; // Verde ahorro sutil
-            if (eff >= 80) return [6, 182, 212, 25];  // Cian ahorro medio
-            return [239, 68, 68, 30]; // Rojo/Ámbar sobreconsumo sutil
+          extruded: true,
+          wireframe: true,
+          autoHighlight: true,
+          highlightColor: [0, 240, 255, 65], // Efecto highlight cian sutil
+          getElevation: f => {
+            const eff = f.properties.energyEfficiency || 80;
+            return (100 - eff) * 6.5 + 15; // De 50m a 250m de altura virtual
           },
-          getLineColor: [0, 240, 255, 25], 
-          getLineWidth: 1.2,
-          lineWidthMinPixels: 0.8,
+          getFillColor: f => {
+            const eff = f.properties.energyEfficiency || 80;
+            // Verde-cian para ahorro, ámbar/naranja para picos de consumo
+            if (eff >= 80) return [16, 140, 185, 32];
+            return [249, 115, 22, 55];
+          },
+          getLineColor: [0, 240, 255, 35],
+          getLineWidth: 1.5,
+          lineWidthMinPixels: 1.0,
           pickable: true
+        }));
+
+        // 4.2 Activos Críticos: "Pines de Generación Limpia e Infraestructura"
+        const pulse = STATE.animationTime.pulse || 0;
+
+        // Capa 1: Halos palpitantes / parpadeantes
+        layers.push(new deck.ScatterplotLayer({
+          id: 'energy-assets-glow',
+          data: STATE.energyAssets,
+          getPosition: d => d.coords,
+          getRadius: d => {
+            const isAlarm = d.color[0] > 200;
+            // Si hay avería, parpadea rápido e intenso; si no, pulsa normal
+            return isAlarm ? (160 + Math.sin(pulse * Math.PI * 4) * 45) : (110 + pulse * 45);
+          },
+          getFillColor: [0, 0, 0, 0],
+          getLineColor: d => {
+            const isAlarm = d.color[0] > 200;
+            const opacity = isAlarm ? Math.max(0, 200 - Math.sin(pulse * Math.PI * 4) * 80) : Math.max(0, (1 - pulse) * 160);
+            return [...d.color, opacity];
+          },
+          getLineWidth: 3,
+          lineWidthMinPixels: 1.5,
+          stroked: true,
+          filled: false
+        }));
+
+        // Capa 2: Núcleos de luz compactos interactivos
+        layers.push(new deck.ScatterplotLayer({
+          id: 'energy-assets-cores',
+          data: STATE.energyAssets.map(d => ({ ...d, type: 'energy' })),
+          getPosition: d => d.coords,
+          getRadius: 70,
+          getFillColor: d => [...d.color, 240],
+          getLineColor: [0, 0, 0, 160],
+          getLineWidth: 1.5,
+          lineWidthMinPixels: 1.0,
+          pickable: true,
+          onHover: info => {
+            const id = info.object ? info.object.id : null;
+            if (STATE.hoveredObjectId !== id) {
+              STATE.hoveredObjectId = id;
+              updatePersistentTooltips();
+            }
+          },
+          onClick: info => {
+            if (info.object) {
+              selectMapAsset('energy', info.object.id);
+            }
+          }
         }));
       }
 
       // 5. CAPA DE ALERTAS EN HACES DE LUZ LÁSER Y RIPPLES DE IMPACTO (LineLayer + ScatterplotLayer)
-      if (STATE.layers.events) {
+      if (STATE.layers.traffic) {
         const rayData = [];
         const ripplesData = [];
         const pulse = STATE.animationTime.pulse || 0;
@@ -2308,25 +3436,44 @@
           }
 
           rayData.push({
+            id: inc.id,
+            type: 'incident',
             from: [inc.coords[0], inc.coords[1], 0],
             to: [inc.coords[0], inc.coords[1], height],
             color: [...baseColor, 255],
             title: inc.title,
-            desc: inc.desc
+            desc: inc.desc,
+            coords: inc.coords,
+            severity: inc.severity,
+            sector: inc.sector
           });
 
           const p1 = (pulse + 0.0) % 1.0;
           ripplesData.push({
+            id: inc.id,
+            type: 'incident',
             position: inc.coords,
             radius: p1 * 1200,
-            color: [...baseColor, Math.max(0, (1 - p1) * 200)]
+            color: [...baseColor, Math.max(0, (1 - p1) * 200)],
+            title: inc.title,
+            desc: inc.desc,
+            coords: inc.coords,
+            severity: inc.severity,
+            sector: inc.sector
           });
 
           const p2 = (pulse + 0.5) % 1.0;
           ripplesData.push({
+            id: inc.id,
+            type: 'incident',
             position: inc.coords,
             radius: p2 * 1200,
-            color: [...baseColor, Math.max(0, (1 - p2) * 200)]
+            color: [...baseColor, Math.max(0, (1 - p2) * 200)],
+            title: inc.title,
+            desc: inc.desc,
+            coords: inc.coords,
+            severity: inc.severity,
+            sector: inc.sector
           });
         });
 
@@ -2340,6 +3487,13 @@
           widthMinPixels: 2.5,
           widthMaxPixels: 6.0,
           pickable: true,
+          onHover: info => {
+            const id = info.object ? info.object.id : null;
+            if (STATE.hoveredObjectId !== id) {
+              STATE.hoveredObjectId = id;
+              updatePersistentTooltips();
+            }
+          },
           updateTriggers: {
             getColor: [STATE.activeIncidents]
           }
@@ -2356,6 +3510,14 @@
           lineWidthMinPixels: 1.5,
           stroked: true,
           filled: false,
+          pickable: true,
+          onHover: info => {
+            const id = info.object ? info.object.id : null;
+            if (STATE.hoveredObjectId !== id) {
+              STATE.hoveredObjectId = id;
+              updatePersistentTooltips();
+            }
+          },
           updateTriggers: {
             getRadius: [pulse],
             getLineColor: [pulse]
@@ -2392,11 +3554,123 @@
 
       if (!STATE.animationTime.waterFlowOffset) STATE.animationTime.waterFlowOffset = 0;
       STATE.animationTime.waterFlowOffset = (STATE.animationTime.waterFlowOffset + 0.35) % 100;
+      // Progresión del incidente automático
+      updateProgressiveIncident();
 
       // Actualizar visualizaciones del mapa
       updateDeckLayers();
       updatePersistentTooltips();
       requestAnimationFrame(renderLoop);
+    }
+
+    // Simula y progresa el tráfico en Plaza de Castilla y en la A-2 progresivamente tras cargar la página
+    function updateProgressiveIncident() {
+      // 1. Incidente de Plaza de Castilla (Crítico, 35s)
+      if (!STATE.progressiveIncident) {
+        STATE.progressiveIncident = {
+          triggered: false,
+          startTime: Date.now(),
+          targetCoords: [-3.689200, 40.466200], // Plaza de Castilla
+          durationMs: 35000
+        };
+      }
+
+      // 2. Incidente de la A-2 Canillejas (Advertencia, 18s, zona derecha)
+      if (!STATE.progressiveIncidentA2) {
+        STATE.progressiveIncidentA2 = {
+          triggered: false,
+          startTime: Date.now(),
+          targetCoords: [-3.615000, 40.445000], // Autovía A-2 / Canillejas (derecha)
+          durationMs: 18000
+        };
+      }
+
+      // Procesar Plaza de Castilla
+      const infoCastilla = STATE.progressiveIncident;
+      if (!infoCastilla.triggered) {
+        const elapsed = Date.now() - infoCastilla.startTime;
+        const progress = Math.min(1.0, elapsed / infoCastilla.durationMs);
+
+        if (STATE.plazaCastillaTrips) {
+          STATE.plazaCastillaTrips.forEach(trip => {
+            let newState = trip.defaultState;
+            if (progress >= 0.8) {
+              newState = 'congested';
+            } else if (progress >= 0.4) {
+              newState = 'slow';
+            }
+            if (trip.currentState !== newState) {
+              trip.currentState = newState;
+            }
+          });
+        }
+
+        if (progress >= 1.0) {
+          infoCastilla.triggered = true;
+
+          const newInc = {
+            id: `inc-progressive-castilla-${Date.now()}`,
+            time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+            sector: 'Movilidad',
+            title: 'Accidente Plaza de Castilla',
+            desc: 'Colisión múltiple en paso subterráneo de la Castellana. Congestión crítica detectada por sensores IoT de tráfico.',
+            severity: 'critical',
+            coords: infoCastilla.targetCoords,
+            pillarImpact: { movilidad: -25, medioambiente: -10 }
+          };
+
+          STATE.activeIncidents.push(newInc);
+          recalculateSystemMetrics();
+          renderIncidentsFeed();
+          recalculateTripStates();
+
+          // Actualizar tooltips para pintar el haz láser e iniciar la animación spring
+          updatePersistentTooltips();
+        }
+      }
+
+      // Procesar A-2 Canillejas (Zona Derecha, Alerta no crítica)
+      const infoA2 = STATE.progressiveIncidentA2;
+      if (!infoA2.triggered) {
+        const elapsed = Date.now() - infoA2.startTime;
+        const progress = Math.min(1.0, elapsed / infoA2.durationMs);
+
+        if (STATE.a2CanillejasTrips) {
+          STATE.a2CanillejasTrips.forEach(trip => {
+            let newState = trip.defaultState;
+            // Ralentización gradual a partir del 50% de tiempo (30s)
+            if (progress >= 0.5) {
+              newState = 'slow';
+            }
+            if (trip.currentState !== newState) {
+              trip.currentState = newState;
+            }
+          });
+        }
+
+        if (progress >= 1.0) {
+          infoA2.triggered = true;
+
+          const newInc = {
+            id: `inc-progressive-a2-${Date.now()}`,
+            time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+            sector: 'Movilidad',
+            title: 'Obras en Autovía A-2',
+            desc: 'Trabajos de reasfaltado urgente en carril derecho a la altura de Canillejas. Retención moderada en sentido entrada.',
+            severity: 'warning', // No crítico (naranja)
+            coords: infoA2.targetCoords,
+            pillarImpact: { movilidad: -10 }
+          };
+
+          STATE.activeIncidents.push(newInc);
+          recalculateSystemMetrics();
+          renderIncidentsFeed();
+          recalculateTripStates();
+
+          // Actualizar tooltips para pintar el haz naranja e iniciar la animación spring
+          updatePersistentTooltips();
+        }
+      }
     }
 
     // Selecciona un activo (sensor, válvula o distrito) y vuela la cámara hacia él
@@ -2407,6 +3681,21 @@
         const feat = STATE.wasteDistricts.features.find(f => f.properties.id === id);
         if (feat) {
           coords = feat.properties.centroid;
+        }
+      } else if (type === 'incident') {
+        const inc = STATE.activeIncidents.find(i => i.id === id);
+        if (inc) {
+          coords = inc.coords;
+        }
+      } else if (type === 'weather') {
+        const est = STATE.weatherStations.find(s => s.id === id);
+        if (est) {
+          coords = est.coords;
+        }
+      } else if (type === 'energy') {
+        const ea = STATE.energyAssets.find(a => a.id === id);
+        if (ea) {
+          coords = ea.coords;
         }
       } else {
         const node = STATE.waterWasteNodes.find(n => n.id === id);
@@ -2421,7 +3710,7 @@
         
         // Registrar activo como seleccionado
         STATE.selectedObjectId = id;
-        STATE.selectedObjectType = type === 'district' ? 'district' : 'water';
+        STATE.selectedObjectType = type === 'district' ? 'district' : (type === 'incident' ? 'incident' : (type === 'weather' ? 'weather' : 'water'));
         
         // Limpiar hovered para evitar dobles expansiones raras
         STATE.hoveredObjectId = null;
@@ -2434,137 +3723,214 @@
 
     // Renderiza dinámicamente el listado del Directorio de Activos
     function renderAssetDirectory() {
+      const wrapper = document.getElementById('asset-directory-card-wrapper');
       const container = document.getElementById('asset-directory-list');
-      if (!container) return;
+      if (!container || !wrapper) return;
 
-      if (!STATE.layers.waterWaste) {
-        container.innerHTML = `
-          <div class="text-[9px] font-mono text-slate-500 text-center py-4">
-            Activa la capa de Agua y Residuos para visualizar los activos de la red.
-          </div>
-        `;
+      if (!STATE.layers.waterWaste && !STATE.layers.airQuality && !STATE.layers.energyGrid) {
+        wrapper.style.display = 'none';
         return;
       }
 
+      wrapper.style.display = 'block';
       let html = '';
 
-      // 1. Red de Aguas (CYII)
-      html += `
-        <div class="flex flex-col gap-1.5">
-          <span class="text-[8px] font-bold text-cyan-400 tracking-wider font-mono uppercase block border-b border-slate-800/80 pb-0.5">💧 Red de Aguas (CYII)</span>
-          <div class="flex flex-col gap-1 pl-1">
-      `;
+      // 1. Red de Aguas y Residuos
+      if (STATE.layers.waterWaste) {
+        html += `
+          <div class="flex flex-col gap-1.5">
+            <span class="text-[8px] font-bold text-cyan-400 tracking-wider font-sans uppercase block border-b border-slate-800/80 pb-0.5">💧 Red de Aguas (CYII)</span>
+            <div class="flex flex-col gap-1 pl-1">
+        `;
 
-      if (STATE.waterWasteNodes) {
-        const mainNodes = STATE.waterWasteNodes.filter(n => n.type === 'water');
-        const controlNodes = STATE.waterWasteNodes.filter(n => n.type === 'water_control');
+        if (STATE.waterWasteNodes) {
+          const mainNodes = STATE.waterWasteNodes.filter(n => n.type === 'water');
+          const controlNodes = STATE.waterWasteNodes.filter(n => n.type === 'water_control');
 
-        mainNodes.forEach(node => {
-          let isAlert = false;
-          STATE.activeIncidents.forEach(inc => {
-            const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
-            if (dist < 0.02) isAlert = true;
-          });
-
-          const statusColor = isAlert ? 'bg-orange-500 glow-orange' : 'bg-cyan-500 glow-cyan';
-          const isSelected = STATE.selectedObjectId === node.id;
-          const activeClass = isSelected 
-            ? 'border-cyan-500 bg-cyan-950/20 text-cyan-300 font-bold' 
-            : 'border-slate-800/50 text-slate-400 hover:bg-slate-900/40 hover:text-slate-200';
-
-          html += `
-            <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-mono cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('water', '${node.id}')">
-              <span class="truncate flex items-center gap-1.5 w-[80%]">
-                <span class="w-1.5 h-1.5 rounded-full ${statusColor} ${isAlert ? 'animate-ping' : ''}"></span>
-                ${node.name}
-              </span>
-              <span class="text-[7.5px] uppercase font-bold ${isAlert ? 'text-orange-400' : 'text-slate-500'}">${isAlert ? 'ALERTA' : 'OK'}</span>
-            </div>
-          `;
-        });
-
-        if (controlNodes.length > 0) {
-          html += `
-            <div class="text-[7px] text-slate-500 font-mono mt-1 mb-0.5 uppercase tracking-wider pl-0.5">Telemetría y Control</div>
-          `;
-          controlNodes.forEach(node => {
+          mainNodes.forEach(node => {
             let isAlert = false;
             STATE.activeIncidents.forEach(inc => {
               const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
               if (dist < 0.02) isAlert = true;
             });
 
-            const statusColor = isAlert ? 'bg-orange-500 glow-orange animate-pulse' : 'bg-slate-600';
+            const statusColor = isAlert ? 'bg-orange-500 glow-orange' : 'bg-cyan-500 glow-cyan';
             const isSelected = STATE.selectedObjectId === node.id;
             const activeClass = isSelected 
               ? 'border-cyan-500 bg-cyan-950/20 text-cyan-300 font-bold' 
-              : 'border-slate-900/50 text-slate-400 hover:bg-slate-900/40 hover:text-slate-200';
+              : 'border-slate-800/50 text-slate-300 hover:bg-slate-900/40 hover:text-slate-100';
 
             html += `
-              <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9px] font-mono cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('water_control', '${node.id}')">
-                <span class="truncate flex items-center gap-1.5 w-[82%]">
-                  <span class="w-1.2 h-1.2 rounded-full ${statusColor}"></span>
+              <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-sans cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('water', '${node.id}')">
+                <span class="truncate flex items-center gap-1.5 w-[80%]">
+                  <span class="w-1.5 h-1.5 rounded-full ${statusColor} ${isAlert ? 'animate-ping' : ''}"></span>
                   ${node.name}
                 </span>
-                <span class="text-[7px] font-bold ${isAlert ? 'text-orange-400' : 'text-slate-500'}">${isAlert ? 'ALERTA' : 'OK'}</span>
+                <span class="text-[7.5px] uppercase font-bold font-mono ${isAlert ? 'text-orange-400' : 'text-slate-400'}">${isAlert ? 'ALERTA' : 'OK'}</span>
+              </div>
+            `;
+          });
+
+          if (controlNodes.length > 0) {
+            html += `
+              <div class="text-[7px] text-slate-500 font-sans mt-1 mb-0.5 uppercase tracking-wider pl-0.5">Telemetría y Control</div>
+            `;
+            controlNodes.forEach(node => {
+              let isAlert = false;
+              STATE.activeIncidents.forEach(inc => {
+                const dist = Math.hypot(node.coords[0] - inc.coords[0], node.coords[1] - inc.coords[1]);
+                if (dist < 0.02) isAlert = true;
+              });
+
+              const statusColor = isAlert ? 'bg-orange-500 glow-orange animate-pulse' : 'bg-slate-600';
+              const isSelected = STATE.selectedObjectId === node.id;
+              const activeClass = isSelected 
+                ? 'border-cyan-500 bg-cyan-950/20 text-cyan-300 font-bold' 
+                : 'border-slate-900/50 text-slate-300 hover:bg-slate-900/40 hover:text-slate-100';
+
+              html += `
+                <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9px] font-sans cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('water_control', '${node.id}')">
+                  <span class="truncate flex items-center gap-1.5 w-[82%]">
+                    <span class="w-1.2 h-1.2 rounded-full ${statusColor}"></span>
+                    ${node.name}
+                  </span>
+                  <span class="text-[7px] font-bold font-mono ${isAlert ? 'text-orange-400' : 'text-slate-400'}">${isAlert ? 'ALERTA' : 'OK'}</span>
+                </div>
+              `;
+            });
+          }
+        }
+        
+        html += `
+            </div>
+          </div>
+        `;
+
+        // 2. Red de Residuos (Distritos)
+        html += `
+          <div class="flex flex-col gap-1.5 mt-3">
+            <span class="text-[8px] font-bold text-purple-400 tracking-wider font-sans uppercase block border-b border-slate-800/80 pb-0.5">♻️ Residuos (Distritos)</span>
+            <div class="flex flex-col gap-1 pl-1">
+        `;
+
+        if (STATE.wasteDistricts && STATE.wasteDistricts.features) {
+          const sortedFeatures = [...STATE.wasteDistricts.features].sort((a, b) => b.properties.fillLevel - a.properties.fillLevel);
+          sortedFeatures.forEach(f => {
+            const id = f.properties.id;
+            const name = f.properties.name;
+            const fillVal = f.properties.fillLevel;
+
+            let statusColor = 'bg-emerald-500';
+            let statusTextClass = 'text-emerald-400';
+            if (fillVal >= 80) {
+              statusColor = 'bg-red-500 glow-red';
+              statusTextClass = 'text-red-400 font-bold';
+            } else if (fillVal >= 60) {
+              statusColor = 'bg-orange-500 glow-orange';
+              statusTextClass = 'text-orange-400 font-bold';
+            }
+
+            const isSelected = STATE.selectedObjectId === id;
+            const activeClass = isSelected 
+              ? 'border-red-500 bg-red-950/20 text-red-300 font-bold' 
+              : 'border-slate-800/50 text-slate-300 hover:bg-slate-900/40 hover:text-slate-100';
+
+            html += `
+              <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-sans cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('district', '${id}')">
+                <span class="truncate flex items-center gap-1.5 w-[80%]">
+                  <span class="w-1.5 h-1.5 rounded-full ${statusColor}"></span>
+                  ${name}
+                </span>
+                <span class="text-[8px] font-mono ${statusTextClass}">${fillVal}%</span>
               </div>
             `;
           });
         }
-      }
-      
-      html += `
+
+        html += `
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
-      // 2. Red de Residuos (Distritos)
-      html += `
-        <div class="flex flex-col gap-1.5 mt-3">
-          <span class="text-[8px] font-bold text-purple-400 tracking-wider font-mono uppercase block border-b border-slate-800/80 pb-0.5">♻️ Residuos (Distritos)</span>
-          <div class="flex flex-col gap-1 pl-1">
-      `;
+      // 3. Estaciones de Calidad del Aire
+      if (STATE.layers.airQuality && STATE.weatherStations) {
+        html += `
+          <div class="flex flex-col gap-1.5 mt-3">
+            <span class="text-[8px] font-bold text-teal-400 tracking-wider font-sans uppercase block border-b border-slate-800/80 pb-0.5">🍃 Calidad del Aire</span>
+            <div class="flex flex-col gap-1 pl-1">
+        `;
 
-      if (STATE.wasteDistricts && STATE.wasteDistricts.features) {
-        // Ordenar distritos por severidad de llenado
-        const sortedFeatures = [...STATE.wasteDistricts.features].sort((a, b) => b.properties.fillLevel - a.properties.fillLevel);
-
-        sortedFeatures.forEach(f => {
-          const id = f.properties.id;
-          const name = f.properties.name;
-          const fillVal = f.properties.fillLevel;
-
+        STATE.weatherStations.forEach(est => {
           let statusColor = 'bg-emerald-500';
           let statusTextClass = 'text-emerald-400';
-          if (fillVal >= 80) {
-            statusColor = 'bg-purple-500 glow-purple';
-            statusTextClass = 'text-purple-400 font-bold';
-          } else if (fillVal >= 60) {
+          if (est.ica > 120) {
+            statusColor = 'bg-red-500 glow-red animate-pulse';
+            statusTextClass = 'text-red-400 font-bold';
+          } else if (est.ica > 80) {
             statusColor = 'bg-orange-500 glow-orange';
             statusTextClass = 'text-orange-400 font-bold';
+          } else if (est.ica > 50) {
+            statusColor = 'bg-amber-500';
+            statusTextClass = 'text-amber-400';
           }
-
-          const isSelected = STATE.selectedObjectId === id;
+          
+          const isSelected = STATE.selectedObjectId === est.id;
           const activeClass = isSelected 
-            ? 'border-purple-500 bg-purple-950/20 text-purple-300 font-bold' 
-            : 'border-slate-800/50 text-slate-400 hover:bg-slate-900/40 hover:text-slate-200';
+            ? 'border-teal-500 bg-teal-950/20 text-teal-300 font-bold' 
+            : 'border-slate-800/50 text-slate-300 hover:bg-slate-900/40 hover:text-slate-100';
 
           html += `
-            <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-mono cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('district', '${id}')">
+            <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-sans cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('weather', '${est.id}')">
               <span class="truncate flex items-center gap-1.5 w-[80%]">
                 <span class="w-1.5 h-1.5 rounded-full ${statusColor}"></span>
-                ${name}
+                ${est.name}
               </span>
-              <span class="text-[8px] ${statusTextClass}">${fillVal}%</span>
+              <span class="text-[8px] font-mono ${statusTextClass}">ICA ${est.ica}</span>
             </div>
           `;
         });
+
+        html += `
+            </div>
+          </div>
+        `;
       }
 
-      html += `
+      // 4. Activos de Energía
+      if (STATE.layers.energyGrid && STATE.energyAssets) {
+        html += `
+          <div class="flex flex-col gap-1.5 mt-3">
+            <span class="text-[8px] font-bold text-amber-400 tracking-wider font-sans uppercase block border-b border-slate-800/80 pb-0.5">⚡ Activos de Energía</span>
+            <div class="flex flex-col gap-1 pl-1">
+        `;
+
+        STATE.energyAssets.forEach(ea => {
+          const isAlarm = ea.color[0] > 200;
+          const statusColor = isAlarm ? 'bg-red-500 glow-red animate-pulse' : 'bg-emerald-500 glow-green';
+          const statusTextClass = isAlarm ? 'text-red-400 font-bold' : 'text-emerald-400';
+          
+          const isSelected = STATE.selectedObjectId === ea.id;
+          const activeClass = isSelected 
+            ? 'border-amber-500 bg-amber-950/20 text-amber-300 font-bold' 
+            : 'border-slate-800/50 text-slate-300 hover:bg-slate-900/40 hover:text-slate-100';
+
+          html += `
+            <div class="flex items-center justify-between border rounded px-1.5 py-0.5 text-[9.5px] font-sans cursor-pointer transition-all ${activeClass}" onclick="selectMapAsset('energy', '${ea.id}')">
+              <span class="truncate flex items-center gap-1.5 w-[80%]">
+                <span class="w-1.5 h-1.5 rounded-full ${statusColor}"></span>
+                ${ea.name}
+              </span>
+              <span class="text-[7.5px] uppercase font-bold font-mono ${statusTextClass}">${isAlarm ? 'ALERTA' : 'OK'}</span>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
       container.innerHTML = html;
       if (window.lucide) {
