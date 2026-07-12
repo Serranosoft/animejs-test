@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full w-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo 0: Centro de Operaciones Logísticas - Defensa COP</title>
+  
+  <!-- CesiumJS CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.119.0/Widgets/widgets.css" rel="stylesheet">
+  
+  <!-- Google Fonts (Inter & JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#03060d',
+            tacticalBg: 'rgba(5, 8, 17, 0.85)',
+            borderCyan: 'rgba(6, 182, 212, 0.3)',
+            borderRed: 'rgba(239, 68, 68, 0.3)',
+            borderGreen: 'rgba(16, 185, 129, 0.3)',
+            neonCyan: '#00f0ff',
+            neonGreen: '#10b981',
+            neonAmber: '#f59e0b',
+            neonRed: '#ef4444',
+            neonPurple: '#a855f7'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Anime.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+  
+  <!-- ECharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+  <!-- Modular CSS Styles -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body class="flex h-full w-full select-none overflow-hidden bg-[#03060d]">
+
+  <!-- Capa de Cuadrícula, Scanlines y Pantalla Curva CRT -->
+  <div class="absolute inset-0 tactical-grid z-20 pointer-events-none"></div>
+  <div class="absolute inset-0 scanlines z-20 pointer-events-none"></div>
+  <div class="absolute inset-0 crt-screen z-20 pointer-events-none"></div>
+
+  <!-- ========================================== -->
+  <!-- SIDEBAR LATERAL IZQUIERDO (Estilo Militar) -->
+  <!-- ========================================== -->
+  <aside class="w-20 h-full bg-[#050811] border-r border-slate-800/80 flex flex-col justify-between py-6 items-center z-30 flex-shrink-0">
+    <!-- Logotipo Superior Militar -->
+    <div class="flex flex-col items-center gap-1">
+      <div class="w-10 h-10 rounded border border-cyan-500/40 bg-slate-950 flex items-center justify-center shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+        <span class="font-mono text-xs font-bold text-cyan-400 tracking-wider">COP</span>
+      </div>
+      <span class="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">LOG-DEF</span>
+    </div>
+    
+    <!-- Menú de Navegación central -->
+    <nav class="flex flex-col gap-6">
+      <a href="/overview.html" class="group relative p-3 rounded border border-transparent text-slate-500 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-950/10 transition-all duration-300 flex items-center justify-center" title="Smart City Overview">
+        <!-- Casco Táctico -->
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10c0 1.5-.5 3-1.5 4S18 19 16.5 19H7.5C6 19 4.5 18 3.5 16S2 13.5 2 12z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 14h16" stroke-linecap="round" />
+          <path d="M12 14v5" stroke-linecap="round" />
+          <circle cx="12" cy="20" r="1" fill="currentColor" />
+          <path d="M6 14c1-2.5 3-4 6-4s5 1.5 6 4" stroke-dasharray="1 1" />
+        </svg>
+      </a>
+      <a href="/index.html" class="group relative p-3 rounded border border-transparent text-slate-500 hover:text-orange-400 hover:border-orange-500/20 hover:bg-orange-950/10 transition-all duration-300 flex items-center justify-center" title="Control Patrimonial AAPP">
+        <!-- Miras/Armas Cruzadas -->
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 20L20 4M20 20L4 4" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke-linecap="round"/>
+        </svg>
+      </a>
+      <a href="/defensa/" class="relative p-3 rounded border border-cyan-500/30 bg-cyan-950/20 text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.15)] transition-all duration-300 flex items-center justify-center" title="Módulo Defensa (COP)">
+        <!-- Radar Circular -->
+        <svg class="w-5 h-5 animate-spin" style="animation-duration: 20s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="12" x2="18" y2="6" stroke-linecap="round" />
+          <circle cx="16" cy="10" r="0.75" fill="currentColor" />
+          <circle cx="8" cy="15" r="0.75" fill="currentColor" />
+        </svg>
+      </a>
+    </nav>
+
+    <!-- Base: Reloj Zulu y Perfil Operador -->
+    <div class="flex flex-col items-center gap-4">
+      <div class="text-center font-mono text-[9px] text-slate-400">
+        <span class="block font-bold tracking-widest" id="zulu-clock">00:00:00 Z</span>
+      </div>
+      <div class="relative w-8 h-8 rounded border border-slate-700 bg-slate-900 flex items-center justify-center overflow-hidden">
+        <span class="text-xs font-mono font-bold text-cyan-400">OP</span>
+        <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-slate-950"></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- LIENZO DE MAPA CENTRAL (CESIUMJS)         -->
+  <!-- ========================================== -->
+  <main class="flex-1 h-full relative z-10 bg-[#03060d]">
+    <div id="cesiumContainer" class="w-full h-full"></div>
+    
+    <!-- Panel de Control de Capas / Telemetría (Flotante Izquierda) -->
+    <div class="absolute top-6 left-[340px] w-48 bg-slate-950/90 border border-cyan-500/30 rounded p-3 font-mono text-[10px] text-cyan-400 z-30 pointer-events-auto shadow-[0_0_15px_rgba(0,240,255,0.1)]">
+      <div class="border-b border-cyan-500/20 pb-1.5 mb-2 font-bold uppercase tracking-wider text-[9px] text-slate-400 flex items-center gap-1.5">
+        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+        <span>Capas Telemetría</span>
+      </div>
+      <div class="space-y-2">
+        <label class="flex items-center justify-between cursor-pointer hover:text-cyan-300 transition-colors">
+          <span>Relieve 3D</span>
+          <input type="checkbox" id="layer-terrain" checked class="accent-cyan-500 w-3 h-3 cursor-pointer">
+        </label>
+        <label class="flex items-center justify-between cursor-pointer hover:text-cyan-300 transition-colors">
+          <span>Rejillas Grid</span>
+          <input type="checkbox" id="layer-grid" checked class="accent-cyan-500 w-3 h-3 cursor-pointer">
+        </label>
+        <label class="flex items-center justify-between cursor-pointer hover:text-cyan-300 transition-colors">
+          <span>Enjambre RFID</span>
+          <input type="checkbox" id="layer-rfid" checked class="accent-cyan-500 w-3 h-3 cursor-pointer">
+        </label>
+        <label class="flex items-center justify-between cursor-pointer hover:text-cyan-300 transition-colors">
+          <span>Perímetros Bounds</span>
+          <input type="checkbox" id="layer-perimeter" checked class="accent-cyan-500 w-3 h-3 cursor-pointer">
+        </label>
+      </div>
+    </div>
+
+    <!-- Terminal Táctica Inferior (Fast Scroll) -->
+    <div class="absolute bottom-32 left-6 w-80 h-28 bg-slate-950/85 border border-cyan-500/30 rounded p-2.5 font-mono text-[9px] text-cyan-400/80 shadow-[0_0_15px_rgba(0,240,255,0.05)] pointer-events-auto z-30 flex flex-col justify-between hidden opacity-0 transition-all duration-300" id="tactical-terminal-container">
+      <div class="flex items-center justify-between border-b border-cyan-500/20 pb-1 mb-1 text-[8px] font-bold tracking-widest text-slate-500 uppercase">
+        <span class="flex items-center gap-1"><i data-lucide="terminal" class="w-3 h-3"></i>Consola Telemetría RFID</span>
+        <span class="animate-pulse text-cyan-300">SYSTEM RUNNING</span>
+      </div>
+      <div id="terminal-log-feed" class="flex-1 overflow-hidden space-y-0.5 custom-scrollbar text-[8px]">
+        <!-- Fast scrolling logs will be generated here -->
+      </div>
+    </div>
+    
+    <!-- Tooltip Táctico Flotante -->
+    <div id="tacticalTooltip" class="absolute hidden z-50 pointer-events-none bg-slate-950 border border-cyan-500/40 rounded px-3 py-2 text-xs font-mono text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+      <div class="flex items-center gap-1.5 border-b border-cyan-500/20 pb-1 mb-1">
+        <span id="tooltip-title" class="font-bold uppercase tracking-wider">Base Militar</span>
+      </div>
+      <p id="tooltip-body" class="text-[10px] text-slate-300">Detalles de la alerta...</p>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- INTERFAZ HUD GLOBAL (PANELES FLOTANTES)   -->
+    <!-- ========================================== -->
+    
+    <!-- HUD GLOBAL - IZQUIERDO -->
+    <div id="hud-global-left" class="hud-global absolute top-6 left-6 w-80 flex flex-col gap-4 pointer-events-auto">
+      <!-- Tarjeta: Estado de la Fuerza Táctica -->
+      <div class="hud-card flex flex-col gap-3">
+        <div class="hud-card-corners"></div>
+        <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+          <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">[ESTADO DE FUERZA]</span>
+          <span class="flex h-2 w-2 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+        </div>
+        
+        <!-- Dial Analítico ECharts -->
+        <div class="space-y-1">
+          <span class="text-[9px] text-slate-500 uppercase tracking-wider font-bold block">Disponibilidad Operativa Global</span>
+          <div id="availability-gauge" class="w-full h-44"></div>
+        </div>
+        
+        <!-- Alertas de Discrepancia RFID -->
+        <div class="p-3 border border-red-500/25 bg-red-950/15 rounded flex items-center justify-between font-mono">
+          <div>
+            <div class="text-[9px] text-red-400 font-bold uppercase flex items-center gap-1">
+              <span class="animate-ping w-1.5 h-1.5 rounded-full bg-red-400"></span>
+              INCIDENCIAS RFID RUTA
+            </div>
+            <div class="text-[10px] text-slate-300 mt-1">14 Alertas en Ruta Terrestre</div>
+          </div>
+          <div class="text-lg font-bold text-red-400 animate-pulse">14</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD GLOBAL - DERECHO -->
+    <div id="hud-global-right" class="hud-global absolute top-6 right-6 w-88 flex flex-col gap-4 pointer-events-auto">
+      <!-- Tarjeta: Torre de Control de Suministros -->
+      <div class="hud-card flex flex-col gap-3 h-[520px]">
+        <div class="hud-card-corners"></div>
+        <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+          <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">[TORRE DE SUMINISTROS]</span>
+        </div>
+        
+        <!-- Gráfico de barras: Volumen de Carga Activa -->
+        <div class="space-y-1">
+          <span class="text-[9px] text-slate-500 uppercase tracking-wider font-bold block">Volumen Carga Activa (Tn)</span>
+          <div id="cargo-bar-chart" class="w-full h-44"></div>
+        </div>
+        
+        <!-- Listado con scroll automático: Materiales Críticos en Rotura de Stock -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+          <span class="text-[9px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Roturas Stock Central</span>
+          <div id="critical-stock-scroll" class="flex-1 overflow-y-auto space-y-1.5 pr-1 font-mono text-[9px] text-slate-300 custom-scrollbar">
+            <!-- Items populated and auto-scrolled in main.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- INTERFAZ HUD LOCAL (ENFOQUE DE BASE)       -->
+    <!-- ========================================== -->
+    
+    <!-- HUD LOCAL - IZQUIERDO -->
+    <div id="hud-local-left" class="hud-local absolute top-6 left-6 w-80 flex flex-col gap-4 pointer-events-auto hidden opacity-0">
+      <div class="hud-card">
+        <div class="hud-card-corners"></div>
+        <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-widest">[INSPECCIÓN ACTIVO]</span>
+          <span class="text-[9px] px-1.5 py-0.5 border border-red-500/40 bg-red-950/20 text-red-400 rounded animate-pulse">ALERTA CRÍTICA</span>
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <h2 id="local-base-title" class="text-sm font-bold text-white uppercase tracking-wide">Base Aérea Los Llanos</h2>
+            <p id="local-base-subtitle" class="text-[10px] text-slate-400">Ala 14 - Albacete (Fuerza Aérea)</p>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2 border border-slate-800 bg-slate-950/40 rounded">
+              <span class="block text-[8px] text-slate-500 uppercase">Inventario Local</span>
+              <span class="text-sm font-bold text-white">1,450 Rep.</span>
+            </div>
+            <div class="p-2 border border-slate-800 bg-slate-950/40 rounded">
+              <span class="block text-[8px] text-slate-500 uppercase">Estado Infra.</span>
+              <span class="text-sm font-bold text-emerald-400">98% Nom.</span>
+            </div>
+          </div>
+          
+          <div class="p-3 border border-red-500/25 bg-red-950/15 rounded text-[10px] space-y-1">
+            <span class="font-bold text-red-400 flex items-center gap-1">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+              INCIDENCIA CRÍTICA
+            </span>
+            <p class="text-slate-300 text-[9px] leading-relaxed">
+              Hangar 3 - Sección Aire: Rotura de stock y pérdida de trazabilidad en lote de filtros de motor (REF: F-982).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD LOCAL - DERECHO (Tarjeta Dinámica Albacete) -->
+    <div id="hud-local-right" class="hud-local absolute top-6 right-6 w-96 flex flex-col gap-4 pointer-events-auto hidden opacity-0">
+      <div class="hud-card flex flex-col min-h-[350px]">
+        <div class="hud-card-corners"></div>
+        <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-widest">[NAVEGACIÓN TÁCTICA]</span>
+        </div>
+        
+        <div class="flex-1 space-y-4 text-xs">
+          <p class="text-slate-300 leading-relaxed text-[11px]">
+            Usted se encuentra inspeccionando visualmente los hangares militares en 3D de la base aérea. Puede alternar a los módulos de inventario 3D o retornar a la vista macro orbital.
+          </p>
+
+          <div class="space-y-2 mt-4">
+            <button onclick="navigateToHangar3D()" class="w-full py-2 bg-gradient-to-r from-red-950/40 to-red-900/30 hover:from-red-900/40 hover:to-red-800/40 border border-red-500/40 text-red-300 rounded text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300">
+              <i data-lucide="box" class="w-4 h-4"></i>
+              Entrar a Hangar (Almacén 3D)
+            </button>
+            <button onclick="zoomOutToGlobal()" class="w-full py-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-400/40 text-cyan-300 rounded text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300">
+              <i data-lucide="globe" class="w-4 h-4"></i>
+              Retornar a Vista Global
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TIMELINE TÁCTICO INFERIOR (CONVOYES)       -->
+    <!-- ========================================== -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[700px] z-30 pointer-events-auto">
+      <div class="hud-card">
+        <div class="hud-card-corners"></div>
+        <div class="flex items-center justify-between gap-4">
+          <!-- Controles Play/Velocidades -->
+          <div class="flex items-center gap-2">
+            <button id="play-btn" class="w-8 h-8 rounded border border-cyan-500/30 bg-cyan-950/20 hover:bg-cyan-900/40 text-cyan-400 flex items-center justify-center shadow-[0_0_8px_rgba(0,240,255,0.1)] transition-all duration-300">
+              <i data-lucide="play" class="w-4 h-4" id="play-icon"></i>
+            </button>
+            
+            <div class="flex items-center gap-1 font-mono text-[9px] text-slate-500">
+              <button id="speed-1x" class="px-1 border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 rounded font-bold">1X</button>
+              <button id="speed-2x" class="px-1 rounded">2X</button>
+              <button id="speed-5x" class="px-1 rounded">5X</button>
+            </div>
+          </div>
+          
+          <!-- Slider del Timeline -->
+          <div class="flex-1 flex flex-col gap-1.5">
+            <div class="flex justify-between font-mono text-[8px] text-slate-500 tracking-wider">
+              <span>08:00</span>
+              <span class="text-cyan-400 font-bold uppercase" id="simulation-clock">14:00 ZULU</span>
+              <span>20:00</span>
+            </div>
+            <input type="range" id="timeline-slider" min="0" max="100" value="50" class="w-full accent-cyan-500 h-1 bg-slate-950 rounded-lg cursor-pointer border border-slate-800">
+          </div>
+        </div>
+        
+        <span class="block text-center text-[8px] font-mono text-slate-500 tracking-widest uppercase mt-2">
+          Arrastre el slider para mover convoyes en ruta por carretera
+        </span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CesiumJS Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.119.0/Cesium.js"></script>
+
+  <!-- Modular JavaScript Orchestrator Entrypoint -->
+  <script type="module" src="./js/main.js"></script>
+
+</body>
+</html>

@@ -3,1640 +3,1202 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DRAGSA - Cerebro Central de Datos</title>
+  <title>DRAGSA - Módulo de Control Patrimonial AAPP</title>
   
-  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- CesiumJS CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.119.0/Widgets/widgets.css" rel="stylesheet">
   
-  <!-- Tailwind Config -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            obsidian: '#03060d',
-            cardbg: 'rgba(9, 14, 26, 0.75)',
-            bordercolor: 'rgba(51, 65, 85, 0.25)',
-            neonCyan: '#00f0ff',
-            neonPurple: '#bd5bff',
-            neonGreen: '#10b981',
-            neonOrange: '#f97316',
-            neonRed: '#ef4444',
-            cyberSlate: '#94a3b8'
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          }
-        }
-      }
-    }
-  </script>
-  
-  <!-- Apache ECharts CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <!-- Estilos manuales personalizados (Vanilla CSS) -->
+  <link rel="stylesheet" href="./style.css">
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-    /* Estilos del panel de control de Dragsa */
-    body {
-      background-color: #03060d;
-      color: #cbd5e1;
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-    }
-
-    /* Cuadrícula técnica de fondo */
-    .grid-bg {
-      background-image: 
-        linear-gradient(rgba(148, 163, 184, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148, 163, 184, 0.02) 1px, transparent 1px);
-      background-size: 30px 30px;
-      background-position: center;
-    }
-
-    /* Efecto Glassmorphic para tarjetas */
-    .scada-card {
-      background: rgba(9, 14, 26, 0.75);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(51, 65, 85, 0.25);
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
-      border-radius: 8px;
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .scada-card:hover {
-      border-color: rgba(0, 240, 255, 0.35);
-      box-shadow: 0 8px 30px rgba(0, 240, 255, 0.06);
-    }
-
-    /* Brillos de estado */
-    .glow-cyan {
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
-    }
-    .glow-orange {
-      box-shadow: 0 0 15px rgba(249, 115, 22, 0.35);
-    }
-    .glow-green {
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
-    }
-
-    /* Barra de desplazamiento delgada personalizada */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(13, 18, 30, 0.1);
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(51, 65, 85, 0.5);
-      border-radius: 2px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 240, 255, 0.4);
-    }
-
-    /* Animación del latido */
-    @keyframes heartbeat {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.15); opacity: 0.4; }
-    }
-    .heartbeat {
-      animation: heartbeat 2s infinite ease-in-out;
-    }
-
-    /* Animación del radar del CCTV */
-    @keyframes radar-pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      100% { transform: scale(1.3); opacity: 0; }
-    }
-    .radar-pulse {
-      animation: radar-pulse 2s infinite ease-out;
-    }
-
-    /* Marquee / Ticker industrial scroll */
-    @keyframes marquee {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .animate-marquee {
-      animation: marquee 20s infinite linear;
-    }
-
-    /* Animación ECG del pulso cardíaco de calidad */
-    @keyframes ecg-glow {
-      0%, 100% { filter: drop-shadow(0 0 1px rgba(16, 185, 129, 0.4)); }
-      50% { filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.95)); }
-    }
-    .ecg-glow-path {
-      animation: ecg-glow 1.5s infinite ease-in-out;
-    }
-
-    /* Clases de resaltado activo para enlazar con las pestañas de la derecha */
-    .card-active-orange {
-      border-color: rgba(249, 115, 22, 0.65) !important;
-      background: rgba(249, 115, 22, 0.08) !important;
-      box-shadow: 0 0 18px rgba(249, 115, 22, 0.16) !important;
-    }
-    .card-active-orange .icon-box {
-      border-color: rgba(249, 115, 22, 0.55) !important;
-      background: rgba(249, 115, 22, 0.15) !important;
-      color: #f97316 !important;
-      box-shadow: 0 0 15px rgba(249, 115, 22, 0.4) !important;
-      animation: pulse-orange-glow 1.8s infinite ease-in-out;
-    }
-
-    .card-active-cyan {
-      border-color: rgba(6, 182, 212, 0.65) !important;
-      background: rgba(6, 182, 212, 0.08) !important;
-      box-shadow: 0 0 18px rgba(6, 182, 212, 0.16) !important;
-    }
-    .card-active-cyan .icon-box {
-      border-color: rgba(6, 182, 212, 0.55) !important;
-      background: rgba(6, 182, 212, 0.15) !important;
-      color: #06b6d4 !important;
-      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4) !important;
-      animation: pulse-cyan-glow 1.8s infinite ease-in-out;
-    }
-
-    .card-active-green {
-      border-color: rgba(16, 185, 129, 0.65) !important;
-      background: rgba(16, 185, 129, 0.08) !important;
-      box-shadow: 0 0 18px rgba(16, 185, 129, 0.16) !important;
-    }
-    .card-active-green .icon-box {
-      border-color: rgba(16, 185, 129, 0.55) !important;
-      background: rgba(16, 185, 129, 0.15) !important;
-      color: #10b981 !important;
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
-      animation: pulse-green-glow 1.8s infinite ease-in-out;
-    }
-
-    @keyframes pulse-orange-glow {
-      0%, 100% { box-shadow: 0 0 4px rgba(249, 115, 22, 0.2); }
-      50% { box-shadow: 0 0 16px rgba(249, 115, 22, 0.7); transform: scale(1.04); }
-    }
-    @keyframes pulse-cyan-glow {
-      0%, 100% { box-shadow: 0 0 4px rgba(6, 182, 212, 0.2); }
-      50% { box-shadow: 0 0 16px rgba(6, 182, 212, 0.7); transform: scale(1.04); }
-    }
-    @keyframes pulse-green-glow {
-      0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.2); }
-      50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.7); transform: scale(1.04); }
-    }
-
-    /* Estilos mejorados para el acordeón de alto rendimiento */
-    .accordion-item {
-      display: flex;
-      flex-direction: column;
-      height: auto !important; /* Anulamos altura fija del JS antiguo */
-      flex-grow: 0;
-      flex-shrink: 0;
-      flex-basis: 50px; /* 48px de cabecera + 2px de bordes del contenedor */
-      overflow: hidden;
-      transition: flex-grow 0.5s cubic-bezier(0.25, 1, 0.3, 1), 
-                  border-color 0.4s ease, 
-                  box-shadow 0.4s ease !important;
-    }
-
-    .accordion-item.expanded {
-      flex-grow: 1;
-      flex-shrink: 1;
-    }
-
-    /* Ocultar el borde inferior de la cabecera cuando el acordeón está colapsado */
-    .accordion-item:not(.expanded) .border-b {
-      border-bottom-color: transparent !important;
-    }
-
-    .accordion-body {
-      flex: 1 1 0%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      padding: 0; /* Sin padding cuando está colapsado para permitir colapso a 0px */
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.15s ease-in, transform 0.15s ease-in, padding 0.15s ease-in;
-      pointer-events: none;
-    }
-
-    .accordion-item.expanded .accordion-body {
-      opacity: 1;
-      transform: translateY(0);
-      padding: 16px; /* Con padding cuando está expandido */
-      pointer-events: auto;
-      /* Retardo de entrada para que el contenido aparezca tras expandirse la tarjeta */
-      transition: opacity 0.35s ease-out 0.15s, transform 0.35s ease-out 0.15s, padding 0.35s ease-out 0.15s;
-    }
-  </style>
 </head>
-<body class="grid-bg flex h-screen w-screen select-none overflow-hidden bg-[#03060d]">
+<body>
 
-  <!-- ========================================== -->
-  <!-- SIDEBAR LATERAL IZQUIERDO (80px de ancho) -->
-  <!-- ========================================== -->
-  <aside class="w-20 h-full bg-[#050811] border-r border-slate-800/60 flex flex-col justify-between py-6 items-center z-30 flex-shrink-0">
-    <!-- Logotipo / Isotipo superior -->
-    <div class="flex flex-col items-center gap-1">
-      <div class="w-10 h-10 rounded-full border border-slate-700 bg-slate-900 flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.15)]">
-        <span class="font-mono text-xs font-bold text-slate-300">MD</span>
-      </div>
-      <span class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mt-1">MADRID</span>
-    </div>
+  <div class="app-root">
     
-    <!-- Navegación central -->
-    <nav class="flex flex-col gap-6">
-      <a href="/overview.html" class="group relative p-3 rounded-lg border border-transparent text-slate-500 hover:text-cyan-400 hover:border-cyan-500/20 hover:bg-cyan-950/10 transition-all duration-300" title="Smart City Overview">
-        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-      </a>
-      <a href="/index.html" class="relative p-3 rounded-lg border border-orange-500/20 bg-orange-950/10 text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.1)] transition-all duration-300" title="Cerebro BESS SCADA">
-        <i data-lucide="zap" class="w-5 h-5"></i>
-      </a>
-      <div class="w-8 h-px bg-slate-800/60 my-2"></div>
-      <button class="p-3 text-slate-600 cursor-not-allowed" title="Movilidad (Módulo Transversal)" disabled>
-        <i data-lucide="car" class="w-5 h-5"></i>
-      </button>
-      <button class="p-3 text-slate-600 cursor-not-allowed" title="Agua (Módulo Transversal)" disabled>
-        <i data-lucide="droplet" class="w-5 h-5"></i>
-      </button>
-      <button class="p-3 text-slate-600 cursor-not-allowed" title="Medio Ambiente (Módulo Transversal)" disabled>
-        <i data-lucide="wind" class="w-5 h-5"></i>
-      </button>
-      <button class="p-3 text-slate-600 cursor-not-allowed" title="Residuos (Módulo Transversal)" disabled>
-        <i data-lucide="trash-2" class="w-5 h-5"></i>
-      </button>
-    </nav>
-
-    <!-- Base del sidebar: Reloj y Perfil -->
-    <div class="flex flex-col items-center gap-4">
-      <div class="text-center font-mono text-[9px] text-slate-500">
-        <span class="block font-bold text-slate-400" id="sb-clock">00:00</span>
+    <!-- Sidebar de Navegación Lateral (80px) -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">D</div>
+      <nav class="sidebar-menu">
+        <a href="/overview.html" class="sidebar-item" title="Smart City Overview">
+          <i data-lucide="layout-dashboard" style="width: 22px; height: 22px;"></i>
+          <span class="sidebar-item-label">Overview</span>
+        </a>
+        <a href="/index.html" class="sidebar-item active" title="Control Patrimonial AAPP">
+          <i data-lucide="zap" style="width: 22px; height: 22px;"></i>
+          <span class="sidebar-item-label">Patrimonio</span>
+        </a>
+        <a href="/defensa/" class="sidebar-item" title="Módulo Defensa">
+          <i data-lucide="shield" style="width: 22px; height: 22px;"></i>
+          <span class="sidebar-item-label">Defensa</span>
+        </a>
+      </nav>
+      <div class="sidebar-status" title="Cerebro Central v4.2 - Operativo">
+        <div class="status-dot"></div>
       </div>
-      <div class="relative w-8 h-8 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center overflow-hidden">
-        <span class="text-xs font-mono font-bold text-orange-400">OP</span>
-        <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-slate-900"></span>
-      </div>
-    </div>
-  </aside>
+    </aside>
 
-  <!-- Contenedor Principal para mantener el espaciado correcto -->
-  <main class="flex-1 h-full p-6 overflow-hidden relative">
-    <div class="w-full h-full grid grid-cols-12 gap-6 relative">
-    
-    <!-- Canvas HTML5 de Alto Rendimiento para renderizar estrellas y flujos en toda la pantalla -->
-    <canvas id="cerebro-canvas" class="absolute inset-0 w-full h-full z-20 pointer-events-none"></canvas>
-
-    <!-- Contenedor del Logotipo central de DRAGSA -->
-    <div id="logo-container" class="absolute z-30 pointer-events-none flex flex-col items-center justify-center select-none" style="transform: translate(-50%, -50%); width: 120px; height: 120px; left: 390px; top: 260px;">
-      <!-- Logo circular con efecto de latido y brillo de red que llena el contenedor -->
-      <div class="w-full h-full rounded-full border border-[#f97316]/50 bg-[#03060d] flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.3)] heartbeat">
-        <span class="font-mono text-xs font-bold text-slate-200 tracking-widest">DRAGSA</span>
-      </div>
-    </div>
-    
-    <!-- ======================================================= -->
-    <!-- COLUMNA IZQUIERDA: EL CEREBRO CENTRAL (50% de la pantalla)-->
-    <!-- ======================================================= -->
-    <section class="col-span-6 flex flex-col h-full overflow-hidden relative">
+    <!-- Contenedor General Split-Screen -->
+    <div class="app-container">
       
-
-
-      <!-- Area de Visualización de Ingesta y Núcleo (Estrella Solar Gigante y Flujo Denso en Canvas) -->
-      <div id="left-container" class="flex-1 relative w-full overflow-hidden bg-slate-950/10 rounded-lg">
-
-        <!-- Capa de Tarjetas a la Izquierda (Z-index superior, boxes más altos y espaciados verticalmente) -->
-        <div class="absolute inset-y-0 left-0 w-64 flex flex-col justify-between py-6 z-10 h-full">
-          
-          <!-- Tarjeta 1: IoT -->
-          <div id="card-iot" class="h-[64px] bg-[#070b14]/85 border border-slate-800/80 rounded px-4 py-2 flex items-center space-x-3.5 w-[220px] hover:border-neonCyan/40 hover:bg-[#070b14] transition-colors duration-300">
-            <div class="icon-box w-9 h-9 rounded bg-neonCyan/5 border border-neonCyan/20 flex items-center justify-center text-neonCyan shadow-[0_0_8px_rgba(0,240,255,0.05)] flex-shrink-0">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="2" y="2" width="20" height="20" rx="4"/>
-                <path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">IoT</h4>
-              <p class="text-[8.5px] font-mono text-slate-500">Sensores & Dispositivos</p>
-              <p class="text-[7.5px] text-slate-500 font-mono mt-0.5">Industrial | PLC | Edge</p>
-            </div>
-          </div>
-
-          <!-- Tarjeta 2: API -->
-          <div id="card-api" class="h-[64px] bg-[#070b14]/85 border border-slate-800/80 rounded px-4 py-2 flex items-center space-x-3.5 w-[220px] hover:border-neonCyan/40 hover:bg-[#070b14] transition-colors duration-300">
-            <div class="icon-box w-9 h-9 rounded bg-neonCyan/5 border border-neonCyan/20 flex items-center justify-center text-neonCyan shadow-[0_0_8px_rgba(0,240,255,0.05)] flex-shrink-0">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <line x1="9" y1="3" x2="9" y2="21"/>
-                <line x1="15" y1="3" x2="15" y2="21"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="3" y1="15" x2="21" y2="15"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">API</h4>
-              <p class="text-[8.5px] font-mono text-slate-500">Integración de Servicios</p>
-              <p class="text-[7.5px] text-slate-500 font-mono mt-0.5">REST | GraphQL | MQTT</p>
-            </div>
-          </div>
-
-          <!-- Tarjeta 3: Vídeo -->
-          <div id="card-video" class="h-[64px] bg-[#070b14]/85 border border-slate-800/80 rounded px-4 py-2 flex items-center space-x-3.5 w-[220px] hover:border-neonCyan/40 hover:bg-[#070b14] transition-colors duration-300">
-            <div class="icon-box w-9 h-9 rounded bg-neonCyan/5 border border-neonCyan/20 flex items-center justify-center text-neonCyan shadow-[0_0_8px_rgba(0,240,255,0.05)] flex-shrink-0">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">Vídeo</h4>
-              <p class="text-[8.5px] font-mono text-slate-500">Streams de Cámaras</p>
-              <p class="text-[7.5px] text-slate-500 font-mono mt-0.5">CCTV | RTSP | IA Analítica</p>
-            </div>
-          </div>
-
-          <!-- Tarjeta 4: FIWARE -->
-          <div id="card-fiware" class="h-[64px] bg-[#070b14]/85 border border-slate-800/80 rounded px-4 py-2 flex items-center space-x-3.5 w-[220px] hover:border-neonCyan/40 hover:bg-[#070b14] transition-colors duration-300">
-            <div class="icon-box w-9 h-9 rounded bg-neonCyan/5 border border-neonCyan/20 flex items-center justify-center text-neonCyan shadow-[0_0_8px_rgba(0,240,255,0.05)] flex-shrink-0">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"/>
-                <circle cx="6" cy="6" r="2"/>
-                <circle cx="18" cy="6" r="2"/>
-                <circle cx="6" cy="18" r="2"/>
-                <circle cx="18" cy="18" r="2"/>
-                <line x1="8" y1="8" x2="10" y2="10"/>
-                <line x1="16" y1="8" x2="14" y2="10"/>
-                <line x1="8" y1="16" x2="10" y2="14"/>
-                <line x1="16" y1="16" x2="14" y2="14"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">FIWARE</h4>
-              <p class="text-[8.5px] font-mono text-slate-500">Context Broker Std</p>
-              <p class="text-[7.5px] text-slate-500 font-mono mt-0.5">NGSI-LD | Smart Cities</p>
-            </div>
-          </div>
-
-          <!-- Tarjeta 5: Bases de Datos -->
-          <div id="card-db" class="h-[64px] bg-[#070b14]/85 border border-slate-800/80 rounded px-4 py-2 flex items-center space-x-3.5 w-[220px] hover:border-neonCyan/40 hover:bg-[#070b14] transition-colors duration-300">
-            <div class="icon-box w-9 h-9 rounded bg-neonCyan/5 border border-neonCyan/20 flex items-center justify-center text-neonCyan shadow-[0_0_8px_rgba(0,240,255,0.05)] flex-shrink-0">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">Bases de Datos</h4>
-              <p class="text-[8.5px] font-mono text-slate-500">Almacén Histórico</p>
-              <p class="text-[7.5px] text-slate-500 font-mono mt-0.5">SQL | NoSQL | Data Lakes</p>
-            </div>
-          </div>
-
-          <!-- Tarjeta 6: Telemetría -->
-          <div id="card-telemetry" class="h-[64px] bg-[#070b14]/85 border border-slate-800/80 rounded px-4 py-2 flex items-center space-x-3.5 w-[220px] hover:border-neonCyan/40 hover:bg-[#070b14] transition-colors duration-300">
-            <div class="icon-box w-9 h-9 rounded bg-neonCyan/5 border border-neonCyan/20 flex items-center justify-center text-neonCyan shadow-[0_0_8px_rgba(0,240,255,0.05)] flex-shrink-0">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">Telemetría</h4>
-              <p class="text-[8.5px] font-mono text-slate-500">Estado de Señales</p>
-              <p class="text-[7.5px] text-slate-500 font-mono mt-0.5">Métricas | Latencia | Pulso</p>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Leyenda y Calidad del dato removidos de este panel -->
-
-      </div>
-    </section>
-
-    <!-- ======================================================= -->
-    <!-- COLUMNA DERECHA: PESTAÑAS ACORDEÓN (50% de la pantalla) -->
-    <!-- ======================================================= -->
-    <section class="col-span-6 flex flex-col h-full overflow-hidden">
-      
-      <!-- Contenedor del Acordeón -->
-      <div class="flex flex-col h-full space-y-4 justify-between">
+      <!-- COLUMNA IZQUIERDA: El Cerebro Administrativo (50%) -->
+      <main class="left-panel">
         
-        <!-- ========================================== -->
-        <!-- ACORDEÓN 01: TELEMETRÍA DE VÍDEO (ORANGE)  -->
-        <!-- ========================================== -->
-        <div id="acc-1" class="accordion-item scada-card border-orange-500/50 expanded">
-          <!-- Header -->
-          <div class="h-12 px-4 flex items-center justify-between cursor-pointer border-b border-slate-800/80 bg-slate-950/40 hover:bg-slate-950/60" onclick="expandAccordion(1)">
-            <div class="flex items-center space-x-3">
-              <div class="w-6 h-6 rounded bg-neonOrange/10 border border-neonOrange/30 flex items-center justify-center text-neonOrange">
-                <span class="text-[9.5px] font-bold">01</span>
+        <!-- Cabecera interna del Cerebro Administrativo -->
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+          <div>
+            <h1 style="font-size: 1.4rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="layout-dashboard" style="width: 22px; height: 22px; color: #4f46e5;"></i>
+              Control Patrimonial
+            </h1>
+            <p style="font-size: 0.725rem; color: #64748b; margin-top: 0.15rem;">Digitalización, monitorización e impacto legal AAPP</p>
+          </div>
+          <div class="badge badge-success" style="font-size: 0.7rem; display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.6rem;">
+            <span class="status-dot" style="width: 6px; height: 6px; background-color: #16a34a; display: inline-block;"></span>
+            <span>Cerebro Central v4.2</span>
+          </div>
+        </div>
+
+        <!-- Buscador de Activos -->
+        <div class="search-wrapper">
+          <div class="search-input-container">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="assetSearch" class="search-input" placeholder="Buscar edificio por nombre, código o estado..." autocomplete="off">
+            <div id="searchResults" class="search-results"></div>
+          </div>
+        </div>
+
+      <!-- BLOQUE A: Indicadores Macro (KPIs de Control) -->
+      <section class="card">
+        <h3 class="section-title">
+          <i data-lucide="bar-chart-3" style="width: 16px; height: 16px;"></i>
+          Indicadores Macro de Control
+        </h3>
+        
+        <div class="kpis-grid">
+          <!-- Eficiencia Contractual (SLA) -->
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span>Eficiencia Contractual (SLA Global)</span>
+              <div class="kpi-icon">
+                <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
               </div>
-              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-100 uppercase">Telemetría de Vídeo <span class="text-slate-400 font-normal font-sans text-[10px] ml-1">(Mundo CCTV con IA)</span></h3>
             </div>
-            <div class="flex items-center space-x-3">
-              <span class="accordion-status text-[9.5px] font-mono text-neonOrange">EXPANDIDO</span>
-              <!-- Arrow icon -->
-              <svg class="accordion-arrow w-4 h-4 text-slate-500 transition-transform duration-300 transform rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
+            <div class="gauge-container">
+              <div id="slaGauge"></div>
+              <div class="gauge-details">
+                <h4 id="gaugeSlaText">92% Global</h4>
+                <p>2 penalizaciones automáticas aplicadas en periodo actual.</p>
+              </div>
+            </div>
+            <div class="kpi-footer">
+              Medido sobre contratas externas de mantenimiento e infraestructura.
             </div>
           </div>
-          <!-- Body -->
-          <div class="accordion-body">
-            <div class="grid grid-cols-12 gap-4 flex-1 overflow-hidden min-h-0">
-              
-              <!-- CCTV Live Mockup (Izquierda) -->
-              <div class="col-span-7 relative border border-slate-800 rounded bg-black/60 overflow-hidden h-full flex items-center justify-center">
-                <!-- CCTV Image Asset -->
-                <img id="cctv-image" src="warehouse_cctv_stream.png" alt="CCTV Warehouse Live Stream" class="w-full h-full object-cover opacity-80" />
-                
-                <!-- Live red blinking indicator -->
-                <div class="absolute top-3 left-3 bg-black/60 border border-slate-800 px-2 py-0.5 rounded flex items-center space-x-1.5 z-10">
-                  <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                  <span class="text-[8.5px] font-mono tracking-wider text-slate-300">STREAM EN DIRECTO</span>
-                </div>
-
-                <!-- Bounding Boxes overlays over elements -->
-                <div class="absolute border border-neonGreen/60 bg-neonGreen/5 px-1 py-0.5 rounded text-[8px] font-mono text-neonGreen shadow-[0_0_8px_rgba(16,185,129,0.2)]" style="top: 52%; left: 18%; width: 20%; height: 26%;">
-                  PALET 01
-                </div>
-                <div class="absolute border border-neonGreen/60 bg-neonGreen/5 px-1 py-0.5 rounded text-[8px] font-mono text-neonGreen shadow-[0_0_8px_rgba(16,185,129,0.2)]" style="top: 48%; left: 45%; width: 14%; height: 35%;">
-                  CARRETILLA 03
-                </div>
-                <div class="absolute border border-neonGreen/60 bg-neonGreen/5 px-1 py-0.5 rounded text-[8px] font-mono text-neonGreen shadow-[0_0_8px_rgba(16,185,129,0.2)]" style="top: 25%; left: 62%; width: 28%; height: 50%;">
-                  CAMIÓN 01
-                </div>
-                <div class="absolute border border-neonRed/60 bg-neonRed/5 px-1 py-0.5 rounded text-[8px] font-mono text-neonRed shadow-[0_0_8px_rgba(239,68,68,0.25)]" style="top: 60%; left: 5%; width: 12%; height: 18%;">
-                  CAJA 12
-                </div>
-
-                <!-- HUD lines grid layout -->
-                <div class="absolute inset-0 border border-slate-900/40 pointer-events-none"></div>
+          
+          <!-- Retorno de Inversión / Fondos Públicos -->
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span>Reducción Huella de Carbono</span>
+              <div class="kpi-icon">
+                <i data-lucide="leaf" style="width: 16px; height: 16px; color: #16a34a;"></i>
               </div>
-
-              <!-- KPIs y Gráfica ECharts (Derecha) -->
-              <div class="col-span-5 flex flex-col justify-between h-full overflow-hidden">
-                <!-- Gráfico de eventos temporal -->
-                <div class="flex-1 min-h-0 flex flex-col justify-between">
-                  <div class="flex justify-between items-baseline mb-1">
-                    <span class="text-[9.5px] font-mono text-slate-500 uppercase">Eventos detectados / Min</span>
-                    <span class="text-xl font-bold font-mono text-[#f97316] animate-pulse" id="cctv-live-event-val">52</span>
-                  </div>
-                  <div class="flex-1 w-full bg-[#04060c]/40 border border-slate-900 rounded p-1">
-                    <div id="chart-cctv-events" class="w-full h-full"></div>
-                  </div>
-                </div>
-
-                <!-- Tarjetas de Métricas Directas -->
-                <div class="space-y-2 mt-3 text-[10.5px]">
-                  <div class="flex justify-between items-center py-1 border-b border-slate-900">
-                    <span class="text-slate-500 font-sans flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>
-                      Conteo de activos
-                    </span>
-                    <span class="font-mono text-slate-100 font-semibold">128</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1 border-b border-slate-900">
-                    <span class="text-slate-500 font-sans flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-                      Intrusión perimetral
-                    </span>
-                    <span class="font-mono text-neonGreen font-semibold">0</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1 border-b border-slate-900">
-                    <span class="text-slate-500 font-sans flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                      Tracking IA
-                    </span>
-                    <span class="text-[9px] font-mono px-1.5 py-0.2 rounded border border-emerald-500/30 text-neonGreen bg-emerald-500/10 font-bold">ACTIVO</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1">
-                    <span class="text-slate-500 font-sans flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                      Vídeo a dato
-                    </span>
-                    <span class="text-[9px] font-mono px-1.5 py-0.2 rounded border border-cyan-500/30 text-cyan-400 bg-cyan-500/10 font-bold">ENRIQUECIENDO</span>
-                  </div>
-                </div>
-              </div>
-
             </div>
-
-            <!-- Footer expandible -->
-            <div class="h-6 border-t border-slate-900 pt-1.5 mt-2 flex justify-between items-center text-[9px] font-mono text-slate-500">
-              <span>Cámaras activas: <strong class="text-slate-400 font-normal">24</strong></span>
-              <span>• Analítica IA: <strong class="text-neonGreen font-normal">Activa</strong></span>
-              <span>Conversión vídeo a dato: <strong class="text-slate-400 font-normal">98.7%</strong></span>
+            <div>
+              <div class="kpi-value">24%</div>
+              <div class="funds-container">
+                <div class="progress-track">
+                  <div class="progress-bar" style="width: 24%"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b;">
+                  <span>Objetivo UE: 30%</span>
+                  <span style="color: #16a34a; font-weight: 600;">Fondos Justificados</span>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-footer">
+              Fondo de Recuperación Europeo (NextGenerationEU) en regla.
             </div>
           </div>
         </div>
 
-        <div id="acc-2" class="accordion-item scada-card border-slate-800/80">
-          <!-- Header -->
-          <div class="h-12 px-4 flex items-center justify-between cursor-pointer border-b border-slate-800/80 bg-slate-950/40 hover:bg-slate-950/60" onclick="expandAccordion(2)">
-            <div class="flex items-center space-x-3">
-              <div class="w-6 h-6 rounded bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                <span class="text-[9.5px] font-bold">02</span>
+        <!-- Semáforo de Riesgo Legal -->
+        <div>
+          <h4 style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: #d97706;"></i>
+            Semáforo de Riesgo Legal (Tareas Críticas)
+          </h4>
+          <div class="legal-list">
+            <div class="legal-item" onclick="flyToAndBlink('building_cibeles')">
+              <div class="legal-item-name">
+                <span class="status-dot" style="background-color: #dc2626; width: 6px; height: 6px;"></span>
+                <span>Palacio de Cibeles: ITE Caducada</span>
               </div>
-              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-100 uppercase">Telemetría Industrial y Dispositivos <span class="text-slate-400 font-normal font-sans text-[10px] ml-1">(OT / IOT)</span></h3>
+              <span class="badge badge-danger">Hace 14 días</span>
             </div>
-            <div class="flex items-center space-x-3">
-              <span class="accordion-status text-[9.5px] font-mono text-slate-500">COLAPSADO</span>
-              <svg class="accordion-arrow w-4 h-4 text-slate-500 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
+            <div class="legal-item" onclick="flyToAndBlink('building_linares')">
+              <div class="legal-item-name">
+                <span class="status-dot" style="background-color: #dc2626; width: 6px; height: 6px;"></span>
+                <span>Palacio de Linares: Incendios Caducada</span>
+              </div>
+              <span class="badge badge-danger">Crítico</span>
             </div>
-          </div>
-          <!-- Body -->
-          <div class="accordion-body">
-            <!-- Grid 2x2 para variables industriales -->
-            <div class="grid grid-cols-2 gap-4 flex-1 p-2">
-              
-              <!-- Variable 1: Temp -->
-              <div class="bg-[#050812]/50 border border-slate-900 rounded p-4 flex items-center space-x-4">
-                <div class="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h5 class="text-[10px] font-mono text-slate-500 uppercase">Temperatura central</h5>
-                  <p class="text-lg font-bold font-mono text-slate-100 mt-0.5" id="ind-temp">68.2 °C</p>
-                </div>
+            <div class="legal-item" onclick="flyToAndBlink('building_buenavista')">
+              <div class="legal-item-name">
+                <span class="status-dot" style="background-color: #f59e0b; width: 6px; height: 6px;"></span>
+                <span>Palacio de Buenavista: OCA Clima</span>
               </div>
-
-              <!-- Variable 2: Presión -->
-              <div class="bg-[#050812]/50 border border-slate-900 rounded p-4 flex items-center space-x-4">
-                <div class="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <line x1="12" y1="12" x2="16" y2="8"/>
-                  </svg>
-                </div>
-                <div>
-                  <h5 class="text-[10px] font-mono text-slate-500 uppercase">Presión de Red</h5>
-                  <p class="text-lg font-bold font-mono text-slate-100 mt-0.5" id="ind-press">4.2 bar</p>
-                </div>
-              </div>
-
-              <!-- Variable 3: Vibración -->
-              <div class="bg-[#050812]/50 border border-slate-900 rounded p-4 flex items-center space-x-4">
-                <div class="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-450">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                  </svg>
-                </div>
-                <div>
-                  <h5 class="text-[10px] font-mono text-slate-500 uppercase">Vibración Activo</h5>
-                  <p class="text-lg font-bold font-mono text-slate-100 mt-0.5" id="ind-vib">2.1 mm/s</p>
-                </div>
-              </div>
-
-              <!-- Variable 4: Protocolos -->
-              <div class="bg-[#050812]/50 border border-slate-900 rounded p-4 flex items-center space-x-4">
-                <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-neonGreen">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                  </svg>
-                </div>
-                <div>
-                  <h5 class="text-[10px] font-mono text-slate-500 uppercase">Protocolo Activo</h5>
-                  <p class="text-xs font-bold font-mono text-slate-100 mt-1">OPC-UA / FIWARE</p>
-                </div>
-              </div>
-
+              <span class="badge badge-warning">Expira en 14d</span>
             </div>
-
-            <!-- Ticker de variables móviles / Running Marquee -->
-            <div class="mt-4 border-t border-slate-900 pt-3 flex flex-col">
-              <span class="text-[9px] font-mono text-slate-500 uppercase mb-1.5 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 heartbeat"></span>
-                Variables en tiempo real
-              </span>
-              <div class="relative overflow-hidden w-full h-7 bg-black/40 border border-slate-900 rounded flex items-center font-mono text-[10px] text-slate-400">
-                <div class="marquee-content whitespace-nowrap flex space-x-12 animate-marquee">
-                  <span>Motor_01: <strong class="text-slate-100 font-semibold" id="mq-temp">68.2 °C</strong></span>
-                  <span>Bomba_02: <strong class="text-slate-100 font-semibold" id="mq-press">4.2 bar</strong></span>
-                  <span>Linea_03: <strong class="text-slate-100 font-semibold">2.1 mm/s</strong></span>
-                  <span>Tanque_04: <strong class="text-slate-100 font-semibold">62.8%</strong></span>
-                  <span>Compresor_01: <strong class="text-neonGreen font-semibold">ACTIVO</strong></span>
-                  <!-- Duplicado para un scroll sin saltos -->
-                  <span>Motor_01: <strong class="text-slate-100 font-semibold">68.2 °C</strong></span>
-                  <span>Bomba_02: <strong class="text-slate-100 font-semibold">4.2 bar</strong></span>
-                  <span>Linea_03: <strong class="text-slate-100 font-semibold">2.1 mm/s</strong></span>
-                  <span>Tanque_04: <strong class="text-slate-100 font-semibold">62.8%</strong></span>
-                  <span>Compresor_01: <strong class="text-neonGreen font-semibold">ACTIVO</strong></span>
-                </div>
+            <div class="legal-item" onclick="flyToAndBlink('building_congreso')">
+              <div class="legal-item-name">
+                <span class="status-dot" style="background-color: #f59e0b; width: 6px; height: 6px;"></span>
+                <span>Congreso de los Diputados: Clima</span>
               </div>
+              <span class="badge badge-warning">Alerta Presupuesto</span>
             </div>
           </div>
         </div>
+      </section>
 
-        <div id="acc-3" class="accordion-item scada-card border-slate-800/80">
-          <!-- Header -->
-          <div class="h-12 px-4 flex items-center justify-between cursor-pointer border-b border-slate-800/80 bg-slate-950/40 hover:bg-slate-950/60" onclick="expandAccordion(3)">
-            <div class="flex items-center space-x-3">
-              <div class="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-neonGreen">
-                <span class="text-[9.5px] font-bold">03</span>
-              </div>
-              <h3 class="text-xs font-bold font-mono tracking-wider text-slate-100 uppercase">Integración de Sistemas de Gestión <span class="text-slate-400 font-normal font-sans text-[10px] ml-1">(IT / NEGOCIO)</span></h3>
-            </div>
-            <div class="flex items-center space-x-3">
-              <span class="accordion-status text-[9.5px] font-mono text-slate-500">COLAPSADO</span>
-              <svg class="accordion-arrow w-4 h-4 text-slate-500 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </div>
-          </div>
-          <!-- Body -->
-          <div class="accordion-body">
-            <div class="grid grid-cols-12 gap-4 flex-1 p-2">
-              
-              <!-- Fila de Sistemas Conectados (Izquierda) -->
-              <div class="col-span-8 grid grid-cols-3 gap-3">
-                
-                <!-- ERP -->
-                <div class="bg-[#05120a]/35 border border-slate-900 rounded p-2.5 flex flex-col items-center justify-center text-center">
-                  <div class="w-8 h-8 rounded bg-neonGreen/5 border border-neonGreen/20 flex items-center justify-center text-neonGreen mb-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                  </div>
-                  <span class="text-[9.5px] font-mono text-slate-200">ERP</span>
-                  <span class="text-[8px] font-mono text-neonGreen mt-0.5">CONECTADO</span>
-                </div>
-
-                <!-- CRM -->
-                <div class="bg-[#05120a]/35 border border-slate-900 rounded p-2.5 flex flex-col items-center justify-center text-center">
-                  <div class="w-8 h-8 rounded bg-neonGreen/5 border border-neonGreen/20 flex items-center justify-center text-neonGreen mb-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                    </svg>
-                  </div>
-                  <span class="text-[9.5px] font-mono text-slate-200">CRM</span>
-                  <span class="text-[8px] font-mono text-neonGreen mt-0.5">CONECTADO</span>
-                </div>
-
-                <!-- BD SQL -->
-                <div class="bg-[#05120a]/35 border border-slate-900 rounded p-2.5 flex flex-col items-center justify-center text-center">
-                  <div class="w-8 h-8 rounded bg-neonGreen/5 border border-neonGreen/20 flex items-center justify-center text-neonGreen mb-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                    </svg>
-                  </div>
-                  <span class="text-[9.5px] font-mono text-slate-200">BD SQL</span>
-                  <span class="text-[8px] font-mono text-neonGreen mt-0.5">CONECTADO</span>
-                </div>
-
-                <!-- Data Lake -->
-                <div class="bg-[#05120a]/35 border border-slate-900 rounded p-2.5 flex flex-col items-center justify-center text-center">
-                  <div class="w-8 h-8 rounded bg-neonGreen/5 border border-neonGreen/20 flex items-center justify-center text-neonGreen mb-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    </svg>
-                  </div>
-                  <span class="text-[9.5px] font-mono text-slate-200">Data Lake</span>
-                  <span class="text-[8px] font-mono text-neonGreen mt-0.5">SYNC</span>
-                </div>
-
-                <!-- APIs -->
-                <div class="bg-[#05120a]/35 border border-slate-900 rounded p-2.5 flex flex-col items-center justify-center text-center">
-                  <div class="w-8 h-8 rounded bg-neonGreen/5 border border-neonGreen/20 flex items-center justify-center text-neonGreen mb-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M4 12H2M22 12h-2"/>
-                    </svg>
-                  </div>
-                  <span class="text-[9.5px] font-mono text-slate-200">APIs</span>
-                  <span class="text-[8px] font-mono text-neonGreen mt-0.5">ONLINE</span>
-                </div>
-
-                <!-- BI / Analytics -->
-                <div class="bg-[#05120a]/35 border border-slate-900 rounded p-2.5 flex flex-col items-center justify-center text-center">
-                  <div class="w-8 h-8 rounded bg-neonGreen/5 border border-neonGreen/20 flex items-center justify-center text-neonGreen mb-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17v-6M13 17v-4M17 17v-8"/>
-                    </svg>
-                  </div>
-                  <span class="text-[9.5px] font-mono text-slate-200">BI / Analytics</span>
-                  <span class="text-[8px] font-mono text-neonGreen mt-0.5">ACTIVO</span>
-                </div>
-
-              </div>
-
-              <!-- Estadísticas de Sincronización (Derecha) -->
-              <div class="col-span-4 flex flex-col justify-center space-y-4 px-2 border-l border-slate-900">
-                <div class="text-left">
-                  <span class="text-[8.5px] font-mono text-slate-500 uppercase">Sincronización ERP</span>
-                  <p class="text-xs font-bold text-slate-100 flex items-center gap-1.5 mt-1">
-                    <svg class="w-3.5 h-3.5 text-neonGreen" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    Hace 1 s
-                  </p>
-                </div>
-                <div class="text-left">
-                  <span class="text-[8.5px] font-mono text-slate-500 uppercase">Estado API corporativa</span>
-                  <div class="mt-1">
-                    <span class="text-[9px] font-mono px-2 py-0.5 rounded border border-emerald-500/30 text-neonGreen bg-emerald-500/10 font-bold">ONLINE</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Registro de eventos (Footer Acordeón 3) -->
-            <div class="mt-4 border-t border-slate-900 pt-3 flex flex-col">
-              <span class="text-[9px] font-mono text-slate-500 uppercase mb-1.5">Últimos eventos integrados</span>
-              <div class="bg-black/30 border border-slate-900 rounded p-2 text-[9px] font-mono space-y-1 text-slate-400" id="management-events-log">
-                <div class="flex justify-between"><span class="text-neonGreen">Facturación ERP</span><span>10:24:35 Factura #8721 generada y guardada</span></div>
-                <div class="flex justify-between"><span class="text-neonGreen">Inventario</span><span>10:24:34 Coste almacén centralizado actualizado</span></div>
-                <div class="flex justify-between"><span class="text-neonGreen">CRM Leads</span><span>10:24:32 Orden #450089 sincronizada con éxito</span></div>
-              </div>
-            </div>
-          </div>
+      <!-- BLOQUE B: Ficha Dinámica del Activo Seleccionado -->
+      <section class="card" style="position: relative;">
+        <h3 class="section-title">
+          <i data-lucide="building-2" style="width: 16px; height: 16px;"></i>
+          Ficha del Activo Seleccionado
+        </h3>
+        
+        <!-- Estado Vacío (Initial State) -->
+        <div id="fichaEmptyState" class="ficha-empty-state">
+          <i data-lucide="mouse-pointer-click" class="ficha-empty-icon" style="width: 48px; height: 48px;"></i>
+          <p style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.25rem;">Ningún activo seleccionado</p>
+          <p style="font-size: 0.75rem; max-width: 250px;">Haz clic en un edificio del mapa 3D o búscalo en la barra superior para inspeccionar sus datos patrimoniales.</p>
         </div>
 
+        <!-- Contenido Ficha Dinámica -->
+        <div id="fichaContent" class="ficha-container">
+          <div class="ficha-header">
+            <div>
+              <h2 id="assetName" class="ficha-title">Palacio de Cibeles</h2>
+              <div id="assetType" class="ficha-subtitle">Sede Central / Ayuntamiento</div>
+            </div>
+            <span id="assetStatusBadge" class="badge">Vencido</span>
+          </div>
+
+          <!-- Banner Alertas -->
+          <div id="assetAlertBanner" class="ficha-alert-banner">
+            <i data-lucide="alert-octagon" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span id="assetAlertText">Inspección Técnica de Edificios (ITE) caducada.</span>
+          </div>
+
+          <!-- Cuadrícula Informativa -->
+          <div class="ficha-grid">
+            <div class="ficha-info-box">
+              <div class="info-label">Código Inventario</div>
+              <div id="assetCode" class="info-value">PAT-MAD-001</div>
+            </div>
+            <div class="ficha-info-box">
+              <div class="info-label">Año de Construcción</div>
+              <div id="assetYear" class="info-value">1919</div>
+            </div>
+            <div class="ficha-info-box">
+              <div class="info-label">Valor Amortizado</div>
+              <div id="assetValue" class="info-value">240.500.000 €</div>
+            </div>
+            <div class="ficha-info-box">
+              <div class="info-label">Desvío Presupuestario</div>
+              <div id="assetDeviation" class="info-value" style="color: #dc2626; font-weight: 600;">+12.4%</div>
+            </div>
+          </div>
+
+          <!-- Control de Contratas -->
+          <div class="ficha-contract-section">
+            <h4 class="ficha-contract-title">
+              <i data-lucide="wrench" style="width: 14px; height: 14px;"></i>
+              Mantenimiento y Contratas
+            </h4>
+            <div class="ficha-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0.5rem;">
+              <div>
+                <div class="info-label">Adjudicataria</div>
+                <div id="assetSubcontractor" class="info-value" style="font-size: 0.85rem;">FCC Medio Ambiente</div>
+              </div>
+              <div>
+                <div class="info-label">Tiempo Medio Resolución</div>
+                <div id="assetAvgResolution" class="info-value" style="font-size: 0.85rem;">2.4 horas</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- BLOQUE C: Grafo de Relaciones Ocultas (Cytoscape.js) -->
+          <div class="graph-wrapper">
+            <h4 class="ficha-contract-title" style="margin-bottom: 0.25rem;">
+              <i data-lucide="git-fork" style="width: 14px; height: 14px; transform: rotate(180deg);"></i>
+              Grafo de Dependencias e Impacto
+            </h4>
+            <p style="font-size: 0.7rem; color: #64748b; margin-bottom: 0.5rem;">Vínculos legales, pólizas de seguros y redes de servicio del activo.</p>
+            <div class="graph-container" id="cyContainer"></div>
+            
+            <div class="graph-legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #4f46e5;"></div>
+                <span>Activo Central</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffffff; border: 1px solid #cbd5e1;"></div>
+                <span>Servicio/Contrato</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #fee2e2; border: 1px solid #fecaca;"></div>
+                <span>Impacto Crítico</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- COLUMNA DERECHA: El Gemelo Digital (50%) -->
+    <aside class="right-panel">
+      
+      <!-- Contenedor del Visor Cesium -->
+      <div id="cesiumContainer"></div>
+
+      <!-- Overlay de Controles del Mapa -->
+      <div class="map-controls-overlay">
+        <div class="map-control-title">Modo de Mapa</div>
+        <div style="display: flex; gap: 0.25rem; margin-bottom: 0.75rem;">
+          <button id="btnModeMadrid" class="map-btn active" style="flex: 1; text-align: center; justify-content: center;" onclick="switchMapMode('madrid')">Madrid AAPP</button>
+          <button id="btnModeSeattle" class="map-btn" style="flex: 1; text-align: center; justify-content: center;" onclick="switchMapMode('seattle')">Seattle OSM</button>
+        </div>
+
+        <div id="madridControls" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <div class="map-control-title">Controles del Gemelo</div>
+          <button id="btnToggleOrbit" class="map-btn map-btn-orbit-pulse active" onclick="toggleOrbit()">
+            <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+            <span>Cámara: Órbita Activa</span>
+          </button>
+          <button class="map-btn" onclick="resetCameraView()">
+            <i data-lucide="home" style="width: 14px; height: 14px;"></i>
+            <span>Vista General Madrid</span>
+          </button>
+          <button id="btnClearSelection" class="map-btn" onclick="deselectAsset()" style="display: none;">
+            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+            <span>Limpiar Selección</span>
+          </button>
+        </div>
+
+        <div id="seattleControls" style="display: none; flex-direction: column; gap: 0.5rem;">
+          <div class="map-control-title">Estilos 3D Tiles</div>
+          <select id="seattleStyleDropdown" class="search-input" style="padding: 0.4rem 0.5rem; font-size: 0.75rem; height: auto;">
+            <option value="material">Color por Material</option>
+            <option value="distance">Color por Distancia</option>
+            <option value="residential">Resaltar Residencial</option>
+            <option value="office">Mostrar Solo Oficinas</option>
+            <option value="apartments">Mostrar Solo Apartamentos</option>
+          </select>
+          <div id="seattleInfoPanel" class="badge badge-warning" style="font-size: 0.7rem; padding: 0.5rem; margin-top: 0.25rem; text-align: center; display: none;">
+            <i data-lucide="info" style="width: 12px; height: 12px; margin-right: 4px;"></i>
+            Haz clic en un edificio
+          </div>
+        </div>
       </div>
 
-    </section>
+      <!-- Leyenda sobrepuesta en el mapa -->
+      <div class="map-legend-overlay">
+        <div class="map-legend-title">Estado Patrimonial 3D</div>
+        <div class="map-legend-item">
+          <div class="map-legend-color" style="background-color: #dc2626;"></div>
+          <span>Inspección Vencida (Crítico)</span>
+        </div>
+        <div class="map-legend-item">
+          <div class="map-legend-color" style="background-color: #f59e0b;"></div>
+          <span>Inspección Próxima (Alerta)</span>
+        </div>
+        <div class="map-legend-item">
+          <div class="map-legend-color" style="background-color: #d1d5db;"></div>
+          <span>Sin Incidencias (Modelo Clay)</span>
+        </div>
+      </div>
 
-  </div>
-  </main>
+    </aside>
 
-  <!-- ======================================================= -->
-  <!-- CONTROL LOGIC & ANIMATIONS (JAVASCRIPT)                -->
-  <!-- ======================================================= -->
+    </div> <!-- Close app-container -->
+  </div> <!-- Close app-root -->
+
+  <!-- CesiumJS Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.119.0/Cesium.js"></script>
+  
+  <!-- Apache ECharts Library -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  
+  <!-- Cytoscape.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.29.2/cytoscape.min.js"></script>
+  
+  <!-- Javascript de Integración de la APP -->
   <script>
-    // -------------------------------------------------------------
-    // ESTADO GENERAL DE LA DEMO
-    // -------------------------------------------------------------
-    const STATE = {
-      activeTab: 1, // 1: Video, 2: Industrial, 3: Gestión
-      cctvEpsHistory: [32, 38, 41, 35, 45, 48, 52],
-      cctvTimestampHistory: ['-6m', '-5m', '-4m', '-3m', '-2m', '-1m', 'Ahora']
+    // Inicializar Lucide Icons
+    lucide.createIcons();
+
+    // 1. Base de datos de edificios para la demo
+    const assetsDatabase = {
+      building_cibeles: {
+        id: "building_cibeles",
+        name: "Palacio de Cibeles (Sede Central)",
+        code: "PAT-MAD-001",
+        year: 1919,
+        value: "240.500.000 €",
+        status: "expired",
+        alertText: "Inspección Técnica de Edificios (ITE) caducada hace 14 días. Pendiente OCA Ascensores.",
+        subcontractor: "FCC Medio Ambiente",
+        budget: "1.250.000 €",
+        avg_resolution: "2.4 horas",
+        sla: 88,
+        deviation: "+12.4% Desvío",
+        lat: 40.4189,
+        lng: -3.6925,
+        height: 45
+      },
+      building_banco: {
+        id: "building_banco",
+        name: "Sede Central Banco de España",
+        code: "PAT-BDE-003",
+        year: 1891,
+        value: "310.200.000 €",
+        status: "valid",
+        alertText: "Sin incidencias detectadas. Todas las inspecciones obligatorias están al corriente.",
+        subcontractor: "Clece S.A.",
+        budget: "850.000 €",
+        avg_resolution: "1.8 horas",
+        sla: 97,
+        deviation: "0.0% Desvío",
+        lat: 40.4188,
+        lng: -3.6942,
+        height: 38
+      },
+      building_buenavista: {
+        id: "building_buenavista",
+        name: "Palacio de Buenavista (Ejército)",
+        code: "PAT-DEF-045",
+        year: 1777,
+        value: "125.000.000 €",
+        status: "warning",
+        alertText: "Inspección OCA Climatización vence en 14 días. Contrato de mantenimiento ajustado.",
+        subcontractor: "Ferrovial Servicios",
+        budget: "980.000 €",
+        avg_resolution: "3.5 horas",
+        sla: 92,
+        deviation: "+4.8% Desvío",
+        lat: 40.4201,
+        lng: -3.6946,
+        height: 32
+      },
+      building_linares: {
+        id: "building_linares",
+        name: "Palacio de Linares (Casa de América)",
+        code: "PAT-EXT-012",
+        year: 1900,
+        value: "68.400.000 €",
+        status: "expired",
+        alertText: "Póliza de seguro de Responsabilidad Civil vencida. Inspección de incendios caducada.",
+        subcontractor: "Eulen Centro",
+        budget: "410.000 €",
+        avg_resolution: "5.6 horas",
+        sla: 81,
+        deviation: "+15.2% Desvío",
+        lat: 40.4196,
+        lng: -3.6927,
+        height: 25
+      },
+      building_bolsa: {
+        id: "building_bolsa",
+        name: "Palacio de la Bolsa de Madrid",
+        code: "PAT-ECO-022",
+        year: 1893,
+        value: "92.100.000 €",
+        status: "valid",
+        alertText: "Sin incidencias. Todas las inspecciones vigentes. Fondos europeos justificados.",
+        subcontractor: "Acciona Infraestructuras",
+        budget: "600.000 €",
+        avg_resolution: "2.1 horas",
+        sla: 95,
+        deviation: "0.0% Desvío",
+        lat: 40.4169,
+        lng: -3.6930,
+        height: 28
+      },
+      building_prado: {
+        id: "building_prado",
+        name: "Museo del Prado (Edificio Villanueva)",
+        code: "PAT-CUL-055",
+        year: 1819,
+        value: "1.240.000.000 €",
+        status: "valid",
+        alertText: "Cumplimiento normativo de seguridad de obras de arte excelente. Control higrotérmico al día.",
+        subcontractor: "Ferrovial Servicios",
+        budget: "2.400.000 €",
+        avg_resolution: "2.8 horas",
+        sla: 94,
+        deviation: "0.0% Desvío",
+        lat: 40.4138,
+        lng: -3.6921,
+        height: 22
+      },
+      building_congreso: {
+        id: "building_congreso",
+        name: "Congreso de los Diputados",
+        code: "PAT-LEG-002",
+        year: 1843,
+        value: "180.300.000 €",
+        status: "warning",
+        alertText: "Mantenimiento preventivo de lucernario de vidrio programado. Alerta en presupuesto climatización.",
+        subcontractor: "Clece S.A.",
+        budget: "1.100.000 €",
+        avg_resolution: "3.1 horas",
+        sla: 91,
+        deviation: "+2.5% Desvío",
+        lat: 40.4158,
+        lng: -3.6963,
+        height: 24
+      }
     };
 
-    let videoChart = null;
-
-    // -------------------------------------------------------------
-    // TRANSICIÓN DEL ACORDEÓN DE PESTAÑAS
-    // -------------------------------------------------------------
-    window.expandAccordion = function(num) {
-      STATE.activeTab = num;
-
-      for (let i = 1; i <= 3; i++) {
-        const item = document.getElementById(`acc-${i}`);
-        const status = item.querySelector('.accordion-status');
-        const arrow = item.querySelector('.accordion-arrow');
-
-        if (i === num) {
-          // Expandir
-          item.classList.add('expanded');
-          
-          status.innerText = 'EXPANDIDO';
-          arrow.style.transform = 'rotate(180deg)';
-
-          // Resaltado de borde
-          if (num === 1) {
-            item.style.borderColor = 'rgba(249, 115, 22, 0.5)';
-            status.className = 'accordion-status text-[9.5px] font-mono text-neonOrange';
-          }
-          if (num === 2) {
-            item.style.borderColor = 'rgba(6, 182, 212, 0.5)';
-            status.className = 'accordion-status text-[9.5px] font-mono text-cyan-400';
-          }
-          if (num === 3) {
-            item.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-            status.className = 'accordion-status text-[9.5px] font-mono text-neonGreen';
-          }
-        } else {
-          // Colapsar
-          item.classList.remove('expanded');
-          
-          status.innerText = 'COLAPSADO';
-          status.className = 'accordion-status text-[9.5px] font-mono text-slate-500';
-          arrow.style.transform = 'rotate(0deg)';
-          
-          item.style.borderColor = 'rgba(51, 65, 85, 0.3)';
-        }
-      }
-
-      // Resaltar las tarjetas correspondientes a la izquierda para coherencia de origen de datos
-      const cardIot = document.getElementById('card-iot');
-      const cardApi = document.getElementById('card-api');
-      const cardVideo = document.getElementById('card-video');
-      const cardFiware = document.getElementById('card-fiware');
-      const cardDb = document.getElementById('card-db');
-      const cardTelemetry = document.getElementById('card-telemetry');
-
-      [cardIot, cardApi, cardVideo, cardFiware, cardDb, cardTelemetry].forEach(el => {
-        if (el) el.classList.remove('card-active-orange', 'card-active-cyan', 'card-active-green');
-      });
-
-      if (num === 1) {
-        // Vídeo: Proviene de Vídeo e IoT
-        if (cardVideo) cardVideo.classList.add('card-active-orange');
-        if (cardIot) cardIot.classList.add('card-active-orange');
-      } else if (num === 2) {
-        // Industrial: Proviene de IoT, Telemetría y API
-        if (cardIot) cardIot.classList.add('card-active-cyan');
-        if (cardTelemetry) cardTelemetry.classList.add('card-active-cyan');
-        if (cardApi) cardApi.classList.add('card-active-cyan');
-      } else if (num === 3) {
-        // Gestión: Proviene de Bases de Datos, API y FIWARE
-        if (cardDb) cardDb.classList.add('card-active-green');
-        if (cardApi) cardApi.classList.add('card-active-green');
-        if (cardFiware) cardFiware.classList.add('card-active-green');
-      }
-
-      // Redimensionar ECharts cuando cambie el tamaño del contenedor
-      setTimeout(() => {
-        if (videoChart) videoChart.resize();
-      }, 300);
-    };
-
-    // -------------------------------------------------------------
-    // MOTOR CANVAS 2D DE ALTO RENDIMIENTO (DENSE SOLAR FLOW)
-    // -------------------------------------------------------------
-    const canvas = document.getElementById('cerebro-canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Referencias a los elementos HTML de las tarjetas
-    const cardElements = [
-      document.getElementById('card-iot'),
-      document.getElementById('card-api'),
-      document.getElementById('card-video'),
-      document.getElementById('card-fiware'),
-      document.getElementById('card-db'),
-      document.getElementById('card-telemetry')
-    ];
-
-
-    // Variables de maquetación dinámica (calculadas en tiempo de ejecución)
-    let cardX = 220;
-    let cardYs = [42, 120, 200, 280, 360, 440];
-    let coreX = 390;
-    let coreY = 260;
-    let coreRadius = 138; // Sol estelar central GIGANTE e impactante
-    let innerCoreRadius = 52; // Enmascarador central para el logo
-
-    // Puntos de las 6 curvas Bezier (precálculo)
-    const CURVE_STEPS = 100;
-    const PRECOMPUTED_CURVES = [[], [], [], [], [], []];
-    
-    // Partículas estelares (ingesta e impulsos de salida y chispas de impacto)
-    let activeParticles = [];
-    let outputParticles = [];
-    let sparkParticles = [];
-    
-    // Desplazamiento global para la simulación de fibra óptica en Canvas
-    let fiberOffset = 0;
-    
-    // Ángulos de rotación para elementos de la estrella
-    let rotAngleSlow = 0;
-    let rotAngleFast = 0;
-    let rotAngleRays = 0;
-    
-    // Parámetros orbitales dinámicos para 5 anillos de estrellas (escalados con coreRadius para rellenar el hueco)
-    const ORBITAL_GROUPS = [
-      { radiusRatio: 0.46, speed: 0.006, direction: 1, count: 8, particles: [] },
-      { radiusRatio: 0.60, speed: -0.005, direction: -1, count: 12, particles: [] },
-      { radiusRatio: 0.75, speed: 0.004, direction: 1, count: 15, particles: [] },
-      { radiusRatio: 0.90, speed: -0.003, direction: -1, count: 12, particles: [] },
-      { radiusRatio: 1.05, speed: 0.002, direction: 1, count: 8, particles: [] }
-    ];
-
-    // Obtener centro vertical del acordeón activo en tiempo real
-    function getActiveAccordionCenterY() {
-      const activeAcc = document.getElementById(`acc-${STATE.activeTab}`);
-      if (!activeAcc) return canvas.height / (2 * (window.devicePixelRatio || 1));
-      
-      const canvasRect = canvas.getBoundingClientRect();
-      const accRect = activeAcc.getBoundingClientRect();
-      return (accRect.top - canvasRect.top) + (accRect.height / 2);
-    }
-
-    // Obtener la posición X destino dentro del acordeón activo (borde izquierdo exacto)
-    function getActiveAccordionTargetX() {
-      const activeAcc = document.getElementById(`acc-${STATE.activeTab}`);
-      if (!activeAcc) return canvas.width / (window.devicePixelRatio || 1);
-      
-      const canvasRect = canvas.getBoundingClientRect();
-      const accRect = activeAcc.getBoundingClientRect();
-      
-      // Colisión exacta contra el borde izquierdo del acordeón
-      return (accRect.left - canvasRect.left);
-    }
-
-    // Inicializar órbitas estables
-    function initOrbitGroups() {
-      ORBITAL_GROUPS.forEach(group => {
-        group.particles = [];
-        for (let i = 0; i < group.count; i++) {
-          const baseAngle = (i / group.count) * Math.PI * 2;
-          group.particles.push({
-            baseAngle: baseAngle,
-            currentAngle: baseAngle,
-            size: 1.2 + Math.random() * 1.6,
-            color: Math.random() < 0.35 ? '#f97316' : '#00f0ff'
-          });
-        }
-      });
-    }
-
-    // Calcular un punto de una curva Bezier cúbica
-    function getBezierPoint(p0, p1, p2, p3, t) {
-      const cx = 3 * (p1.x - p0.x);
-      const bx = 3 * (p2.x - p1.x) - cx;
-      const ax = p3.x - p0.x - cx - bx;
-      
-      const cy = 3 * (p1.y - p0.y);
-      const by = 3 * (p2.y - p1.y) - cy;
-      const ay = p3.y - p0.y - cy - by;
-      
-      const x = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
-      const y = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
-      
-      return { x, y };
-    }
-
-    // Precálculo de todas las trayectorias de curvas Bezier
-    function precomputeCurves() {
-      const canvasRect = canvas.getBoundingClientRect();
-      
-      for (let i = 0; i < 6; i++) {
-        PRECOMPUTED_CURVES[i] = [];
-        const el = cardElements[i];
-        if (!el) continue;
-        
-        const rect = el.getBoundingClientRect();
-        const startX = rect.right - canvasRect.left;
-        const startY = (rect.top - canvasRect.top) + (rect.height / 2);
-        
-        const currentDistanceX = coreX - startX;
-        const p0 = { x: startX, y: startY };
-        const p1 = { x: startX + currentDistanceX * 0.45, y: startY };
-        const p2 = { x: startX + currentDistanceX * 0.55, y: coreY };
-        const p3 = { x: coreX, y: coreY };
-
-        for (let step = 0; step <= CURVE_STEPS; step++) {
-          const t = step / CURVE_STEPS;
-          PRECOMPUTED_CURVES[i].push(getBezierPoint(p0, p1, p2, p3, t));
-        }
-      }
-    }
-
-    // Aplicar las posiciones fijas en arco que rodean al Sol Central en forma de elipse exterior para separarlas del núcleo
-    function applyStaticCardPositions(coreX, coreY, coreRadius, canvasRect) {
-      // Radios horizontal y vertical de la elipse de distribución para separar las tarjetas
-      const Rx = coreRadius * 2.25;
-      const Ry = coreRadius * 1.90;
-      
-      // Ángulos para distribuir las 6 tarjetas en el semicírculo izquierdo
-      // Calculados con sines uniformes [-0.85, -0.51, -0.17, 0.17, 0.51, 0.85] para un espaciado vertical perfecto
-      const angles = [-58.2, -30.7, -9.8, 9.8, 30.7, 58.2].map(deg => deg * Math.PI / 180);
-
-      // Quitar transformaciones para medir la posición base del flexbox
-      cardElements.forEach(el => {
-        if (el) el.style.transform = 'none';
-      });
-
-      // Leer dimensiones del layout base de una vez
-      const baseRects = cardElements.map(el => el ? el.getBoundingClientRect() : null);
-
-      cardElements.forEach((el, idx) => {
-        if (!el) return;
-        const rect = baseRects[idx];
-        const angle = angles[idx];
-        
-        // Centro vertical base del card
-        const baseCenterY = (rect.top - canvasRect.top) + (rect.height / 2);
-        // Centro vertical destino en el arco elíptico
-        const targetCenterY = coreY + Ry * Math.sin(angle);
-        const dy = targetCenterY - baseCenterY;
-        
-        // Borde derecho base del card
-        const baseRightX = rect.right - canvasRect.left;
-        // Borde derecho destino en el arco elíptico (coreX - Rx * cos(angle))
-        const targetRightX = coreX - Rx * Math.cos(angle);
-        const dx = targetRightX - baseRightX;
-        
-        // Aplicar desplazamiento estático en arco elíptico
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-      });
-    }
-
-    // Sincronizar coordenadas físicas del DOM con el Canvas
-    function syncLayoutCoordinates() {
-      const canvasRect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      
-      // Ajustar resolución de Canvas
-      canvas.width = canvasRect.width * dpr;
-      canvas.height = canvasRect.height * dpr;
-      ctx.scale(dpr, dpr);
-      
-      // Obtener el contenedor izquierdo para posicionamiento del Sol
-      const leftContainer = document.getElementById('left-container');
-      const leftContainerRect = leftContainer.getBoundingClientRect();
-      const leftContainerRight = leftContainerRect.right - canvasRect.left;
-      const leftContainerHeight = leftContainerRect.height;
-      const leftContainerTop = leftContainerRect.top - canvasRect.top;
-      
-      // 1. Obtener la coordenada X base del primer card sin transform
-      if (cardElements[0]) cardElements[0].style.transform = 'none';
-      const firstCardRect = cardElements[0].getBoundingClientRect();
-      cardX = (firstCardRect.right - canvasRect.left);
-      
-      // 2. Determinar posición del Sol Central (desplazado levemente a la derecha para ganar espacio a la izquierda)
-      coreY = leftContainerTop + leftContainerHeight / 2;
-      coreX = cardX + (leftContainerRight - cardX) * 0.62;
-      coreRadius = Math.min(leftContainerHeight * 0.38, 185);
-      innerCoreRadius = coreRadius * 0.40;
-      
-      // 3. Posicionar tarjetas en la elipse de distribución alrededor del Sol
-      applyStaticCardPositions(coreX, coreY, coreRadius, canvasRect);
-
-      // Actualizar posición y tamaño del contenedor del logo HTML en el centro del sol
-      const logoContainer = document.getElementById('logo-container');
-      if (logoContainer) {
-        logoContainer.style.left = `${coreX}px`;
-        logoContainer.style.top = `${coreY}px`;
-        logoContainer.style.width = `${innerCoreRadius * 2}px`;
-        logoContainer.style.height = `${innerCoreRadius * 2}px`;
-      }
-      
-      // 4. Obtener las coordenadas Y reales finales ya transformadas
-      cardYs = cardElements.map(el => {
-        const rect = el.getBoundingClientRect();
-        return (rect.top - canvasRect.top) + (rect.height / 2);
-      });
-
-      // 5. Precomputar curvas Bezier
-      precomputeCurves();
-    }
-
-    // Inyectar partícula individual en el flujo de entrada
-    function spawnParticle() {
-      const curveIdx = Math.floor(Math.random() * 6);
-      
-      activeParticles.push({
-        state: 'flow', // 'flow' (curva) o 'orbit' (remolino central)
-        curveIndex: curveIdx,
-        progress: 0,
-        speed: 0.004 + Math.random() * 0.005, // Flujo de datos más lento y elegante
-        size: 1.2 + Math.random() * 2.2, // Haces de tamaño original
-        color: '#00f0ff',
-        opacity: 1,
-        angle: 0,
-        orbitRadius: 0,
-        orbitSpeed: 0,
-        lifespan: 0,
-        maxLifespan: 0
-      });
-    }
-
-    // Inyectar partícula saliendo del núcleo hacia los acordeones de la derecha (flujo realista)
-    function spawnOutputRay() {
-      // Ángulo en el hemisferio derecho (-60 a +60 grados)
-      const angle = (Math.random() - 0.5) * (Math.PI * 0.65);
-      
-      // Distancia entre el enmascarador central y el radio exterior del núcleo
-      const dist = innerCoreRadius + Math.random() * (coreRadius - innerCoreRadius);
-      
-      const startX = coreX + dist * Math.cos(angle);
-      const startY = coreY + dist * Math.sin(angle);
-
-      outputParticles.push({
-        x: startX,
-        y: startY,
-        speedX: 1.6 + Math.random() * 1.4, // Avance horizontal lento y suave
-        opacity: 0.85 + Math.random() * 0.15,
-        size: 1.2 + Math.random() * 1.6,
-        color: Math.random() < 0.35 ? '#f97316' : '#00f0ff' // Partículas cian y naranja escapando del núcleo
-      });
-    }
-
-    // Generar chispas de impacto de datos
-    function createSparks(x, y) {
-      const count = 8 + Math.floor(Math.random() * 8);
-      for (let i = 0; i < count; i++) {
-        const angle = (Math.random() * Math.PI * 2);
-        const speed = 0.8 + Math.random() * 2.8;
-        sparkParticles.push({
-          x: x,
-          y: y,
-          vx: Math.cos(angle) * speed - 0.6, // Rebote leve hacia la izquierda al chocar con el borde físico
-          vy: Math.sin(angle) * speed,
-          size: 0.8 + Math.random() * 1.6,
-          alpha: 1.0,
-          decay: 0.02 + Math.random() * 0.025,
-          color: Math.random() < 0.4 ? '#00f0ff' : (Math.random() < 0.75 ? '#bd5bff' : '#ffffff')
-        });
-      }
-    }
-
-    // Bucle de renderizado principal a 60 FPS
-    function renderLoop() {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        requestAnimationFrame(renderLoop);
-        return;
-      }
-      
-      // 1. Limpieza completa de Canvas para evitar oscurecer la interfaz (haciendo que sea transparente)
-      ctx.clearRect(0, 0, rect.width, rect.height);
-      
-      // Spawners dinámicos de entrada (Alta densidad de flujo de datos)
-      if (Math.random() < 0.70) spawnParticle();
-      if (Math.random() < 0.35) spawnParticle();
-      
-      // Generar haces de luz de salida hacia la derecha
-      if (Math.random() < 0.22) spawnOutputRay();
-
-      // 2. Dibujar curvas base de fibra óptica
-      ctx.lineWidth = 2.4;
-      let streamGrad = ctx.createLinearGradient(cardX, 0, coreX, 0);
-      streamGrad.addColorStop(0, 'rgba(0, 240, 255, 0.04)');
-      streamGrad.addColorStop(0.75, 'rgba(0, 240, 255, 0.12)');
-      streamGrad.addColorStop(1, 'rgba(249, 115, 22, 0.2)');
-
-      for (let i = 0; i < 6; i++) {
-        if (!PRECOMPUTED_CURVES[i] || PRECOMPUTED_CURVES[i].length === 0) continue;
-        ctx.beginPath();
-        PRECOMPUTED_CURVES[i].forEach((pt, idx) => {
-          if (idx === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        });
-        ctx.strokeStyle = streamGrad;
-        ctx.stroke();
-      }
-
-      // 3. Dibujar hilos de luz densos y fluidos (Fibras ópticas animadas)
-      fiberOffset -= 0.6;
-      ctx.lineWidth = 1.8;
-      
-      let fiberGrad = ctx.createLinearGradient(cardX, 0, coreX, 0);
-      fiberGrad.addColorStop(0, 'rgba(0, 240, 255, 0.45)');
-      fiberGrad.addColorStop(0.65, 'rgba(0, 240, 255, 0.45)');
-      fiberGrad.addColorStop(1, 'rgba(249, 115, 22, 0.7)');
-      ctx.strokeStyle = fiberGrad;
-
-      for (let i = 0; i < 6; i++) {
-        if (!PRECOMPUTED_CURVES[i] || PRECOMPUTED_CURVES[i].length === 0) continue;
-        ctx.save();
-        ctx.setLineDash([14, 42]);
-        ctx.lineDashOffset = fiberOffset * (1.2 + i * 0.1);
-        ctx.beginPath();
-        PRECOMPUTED_CURVES[i].forEach((pt, idx) => {
-          if (idx === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        });
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // 4. Actualizar y renderizar partículas de entrada con estelas manuales
-      for (let i = activeParticles.length - 1; i >= 0; i--) {
-        const p = activeParticles[i];
-        
-        if (!PRECOMPUTED_CURVES[p.curveIndex] || PRECOMPUTED_CURVES[p.curveIndex].length === 0) {
-          activeParticles.splice(i, 1);
-          continue;
-        }
-
-        if (p.state === 'flow') {
-          p.progress += p.speed;
-          
-          const curveLen = PRECOMPUTED_CURVES[p.curveIndex].length;
-          const currentStep = Math.min(curveLen - 1, Math.floor(p.progress * curveLen));
-          const pt = PRECOMPUTED_CURVES[p.curveIndex][currentStep];
-          
-          if (!pt) {
-            activeParticles.splice(i, 1);
-            continue;
-          }
-
-          const dx = pt.x - coreX;
-          const dy = pt.y - coreY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist <= coreRadius * 0.95 || p.progress >= 0.95) {
-            p.state = 'orbit';
-            p.angle = Math.atan2(dy, dx);
-            p.orbitRadius = coreRadius * (0.42 + Math.random() * 0.63); // Rellena todo el espacio desde el enmascarador central
-            p.orbitSpeed = (0.006 + Math.random() * 0.009) * (Math.random() < 0.5 ? 1 : -1); // Rotación majestuosa y más lenta
-            p.maxLifespan = 80 + Math.floor(Math.random() * 80); // Mayor tiempo de vida en órbita
-            p.lifespan = p.maxLifespan;
-            p.color = Math.random() < 0.4 ? '#f97316' : '#00f0ff';
-          } else {
-            // Dibujar partícula de flujo con estela manual
-            const trailLength = 6;
-            for (let j = 0; j < trailLength; j++) {
-              const stepIdx = Math.max(0, currentStep - j * 3);
-              const trailPt = PRECOMPUTED_CURVES[p.curveIndex][stepIdx];
-              if (!trailPt) continue;
-              
-              const size = p.size * (1.0 - j / trailLength * 0.6);
-              const opacity = p.opacity * (1.0 - j / trailLength);
-              
-              ctx.beginPath();
-              ctx.arc(trailPt.x, trailPt.y, size, 0, Math.PI * 2);
-              ctx.fillStyle = p.color === '#00f0ff' ? `rgba(0, 240, 255, ${opacity})` : `rgba(249, 115, 22, ${opacity})`;
-              ctx.fill();
-            }
-          }
-        }
-        
-        if (p.state === 'orbit') {
-          p.angle += p.orbitSpeed;
-          p.orbitRadius -= 0.04; // Contracción más lenta para permanecer más tiempo
-          p.lifespan--;
-          p.opacity = p.lifespan / p.maxLifespan;
-          
-          const px = coreX + p.orbitRadius * Math.cos(p.angle);
-          const py = coreY + p.orbitRadius * Math.sin(p.angle);
-
-          // Colisión con el enmascarador central
-          if (p.lifespan <= 0 || p.orbitRadius < innerCoreRadius) {
-            activeParticles.splice(i, 1);
-            continue;
-          }
-
-          // Dibujar partícula orbital con estela manual en espiral
-          const trailLength = 8;
-          for (let j = 0; j < trailLength; j++) {
-            const tempAngle = p.angle - j * p.orbitSpeed * 0.8;
-            const tempRadius = p.orbitRadius + j * 0.08 * 0.8;
-            const tx = coreX + tempRadius * Math.cos(tempAngle);
-            const ty = coreY + tempRadius * Math.sin(tempAngle);
-            
-            const size = p.size * (1.0 - j / trailLength * 0.6);
-            const opacity = p.opacity * (1.0 - j / trailLength);
-            
-            ctx.beginPath();
-            ctx.arc(tx, ty, size, 0, Math.PI * 2);
-            ctx.fillStyle = p.color === '#00f0ff' ? `rgba(0, 240, 255, ${opacity})` : `rgba(249, 115, 22, ${opacity})`;
-            ctx.fill();
-          }
-        }
-      }
-
-      // 5. ACTUALIZAR Y DIBUJAR PARTÍCULAS ESCAPADAS HACIA LA DERECHA (FLUJO REALISTA)
-      const currentTargetY = getActiveAccordionCenterY();
-      const currentTargetX = getActiveAccordionTargetX();
-      
-      for (let i = outputParticles.length - 1; i >= 0; i--) {
-        const p = outputParticles[i];
-        const distX = currentTargetX - p.x;
-        
-        if (distX > 4) {
-          // Curvado dinámico buscando el acordeón activo de la derecha
-          p.y += (currentTargetY - p.y) * (p.speedX / distX);
-          p.x += p.speedX;
-          
-          // Desvanecimiento suave al aproximarse al borde izquierdo del acordeón para una absorción limpia
-          if (distX < 60) {
-            p.opacity = Math.max(0, distX / 60);
-          }
-        } else {
-          // Llegada al destino: absorción limpia sin explosiones ni chispas
-          outputParticles.splice(i, 1);
-          continue;
-        }
-
-        // Dibujar partícula saliente con estela manual suave y realista
-        const trailLength = 5;
-        for (let j = 0; j < trailLength; j++) {
-          const offsetX = -j * p.speedX * 0.8;
-          const offsetY = -j * (currentTargetY - p.y) * (p.speedX / distX) * 0.8;
-          
-          const tx = p.x + offsetX;
-          const ty = p.y + offsetY;
-          
-          const size = p.size * (1.0 - j / trailLength * 0.5);
-          const opacity = (p.opacity || 1.0) * (1.0 - j / trailLength);
-          
-          ctx.beginPath();
-          ctx.arc(tx, ty, size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color === '#00f0ff' ? `rgba(0, 240, 255, ${opacity})` : `rgba(249, 115, 22, ${opacity})`;
-          ctx.fill();
-        }
-      }
-
-      // 6. Dibujar la Gran Estrella Solar Central (Aura de luz y blur)
-      const pulseScalar = 0.98 + Math.sin(Date.now() * 0.0035) * 0.04;
-      
-      // Corona difuminada exterior (Llamarada naranja, adaptada a innerCoreRadius)
-      let coronaGrad = ctx.createRadialGradient(coreX, coreY, innerCoreRadius, coreX, coreY, coreRadius * 1.15 * pulseScalar);
-      coronaGrad.addColorStop(0, 'rgba(3, 6, 13, 0)');
-      coronaGrad.addColorStop(0.3, 'rgba(249, 115, 22, 0.05)');
-      coronaGrad.addColorStop(0.68, 'rgba(249, 115, 22, 0.52)');
-      coronaGrad.addColorStop(0.88, 'rgba(239, 68, 68, 0.18)');
-      coronaGrad.addColorStop(1, 'rgba(3, 6, 13, 0)');
-      
-      ctx.fillStyle = coronaGrad;
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, coreRadius * 1.25, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 7. Rotación de las Órbitas Estelares
-      ORBITAL_GROUPS.forEach(group => {
-        const orbitRadius = coreRadius * group.radiusRatio;
-        group.particles.forEach(p => {
-          p.currentAngle += group.speed;
-          const ox = coreX + orbitRadius * Math.cos(p.currentAngle) * pulseScalar;
-          const oy = coreY + orbitRadius * Math.sin(p.currentAngle) * pulseScalar;
-
-          ctx.beginPath();
-          ctx.arc(ox, oy, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color === '#00f0ff' ? 'rgba(0, 240, 255, 0.75)' : 'rgba(249, 115, 22, 0.75)';
-          ctx.fill();
-        });
-      });
-
-      // 8. Anillos Tecnológicos Giratorios en Naranja/Cian
-      rotAngleSlow -= 0.0018;
-      rotAngleFast += 0.0045;
-      
-      ctx.save();
-      ctx.translate(coreX, coreY);
-
-      // Anillo 1 (Naranja, dasharray)
-      ctx.rotate(rotAngleSlow);
-      ctx.strokeStyle = 'rgba(249, 115, 22, 0.3)';
-      ctx.lineWidth = 1.4;
-      ctx.setLineDash([8, 14]);
-      ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 0.95, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Anillo 2 (Cian, dasharray)
-      ctx.rotate(rotAngleFast - rotAngleSlow);
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-      ctx.lineWidth = 1.8;
-      ctx.setLineDash([16, 12]);
-      ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 0.88, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Anillo 3 (Naranja Fino)
-      ctx.rotate(rotAngleSlow * 0.5);
-      ctx.strokeStyle = 'rgba(249, 115, 22, 0.35)';
-      ctx.lineWidth = 2.2;
-      ctx.setLineDash([4, 6]);
-      ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 0.78, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.restore();
-
-      // 9. Destello Estelar en Cruz (Lens Flare / Crosshair)
-      rotAngleRays += 0.0008;
-      
-      ctx.save();
-      ctx.translate(coreX, coreY);
-      ctx.rotate(rotAngleRays);
-
-      let rayLength = coreRadius * 1.65;
-      let rayGrad = ctx.createLinearGradient(-rayLength, 0, rayLength, 0);
-      rayGrad.addColorStop(0, 'rgba(249, 115, 22, 0)');
-      rayGrad.addColorStop(0.5, 'rgba(249, 115, 22, 0.65)');
-      rayGrad.addColorStop(1, 'rgba(249, 115, 22, 0)');
-      ctx.fillStyle = rayGrad;
-      
-      // Rayo Horizontal
-      ctx.fillRect(-rayLength, -0.9, rayLength * 2, 1.8);
-      
-      // Rayo Vertical
-      ctx.rotate(Math.PI / 2);
-      ctx.fillRect(-rayLength, -0.9, rayLength * 2, 1.8);
-
-      ctx.restore();
-
-      // 10. Cobertura del núcleo vacío (Mantiene el centro limpio para el logo)
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, innerCoreRadius, 0, Math.PI * 2);
-      ctx.fillStyle = '#03060d'; // Fondo idéntico
-      ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)';
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = 'rgba(249, 115, 22, 0.55)';
-      ctx.shadowBlur = 12;
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-
-      // Continuar el bucle a 60 FPS estables
-      requestAnimationFrame(renderLoop);
-    }
-
-    // -------------------------------------------------------------
-    // MOTOR DE DATOS REALISTAS DINÁMICOS (SIMULADOR EN VIVO)
-    // -------------------------------------------------------------
-    function initDataTelemetryUpdates() {
-      // 1. Acordeón 1 (Video): Eventos CCTV por minuto
-      setInterval(() => {
-        const jitter = Math.floor(Math.random() * 9 - 4);
-        const nextVal = Math.max(40, 52 + jitter);
-        
-        document.getElementById('cctv-live-event-val').innerText = nextVal;
-        
-        STATE.cctvEpsHistory.push(nextVal);
-        if (STATE.cctvEpsHistory.length > 7) {
-          STATE.cctvEpsHistory.shift();
-        }
-
-        if (videoChart && STATE.activeTab === 1) {
-          videoChart.setOption({
-            series: [{
-              data: STATE.cctvEpsHistory
-            }]
-          });
-        }
-      }, 2500);
-
-      // 2. Acordeón 2 (Industrial): Temperatura, presión y vibración
-      setInterval(() => {
-        const temp = (67.5 + Math.random() * 1.5).toFixed(1);
-        const press = (4.1 + Math.random() * 0.2).toFixed(1);
-        const vib = (1.95 + Math.random() * 0.3).toFixed(2);
-        
-        document.getElementById('ind-temp').innerText = `${temp} °C`;
-        document.getElementById('ind-press').innerText = `${press} bar`;
-        document.getElementById('ind-vib').innerText = `${vib} mm/s`;
-
-        document.getElementById('mq-temp').innerText = `${temp} °C`;
-        document.getElementById('mq-press').innerText = `${press} bar`;
-      }, 1500);
-
-      // 3. Acordeón 3 (Gestión): Log de eventos
-      const logContainer = document.getElementById('management-events-log');
-      const sampleEvents = [
-        { type: 'Facturación ERP', msg: 'Factura #8722 generada y guardada' },
-        { type: 'Inventario', msg: 'Ajuste de stock automatizado en almacén 4' },
-        { type: 'CRM Leads', msg: 'Orden #450090 sincronizada con éxito' },
-        { type: 'BI Analytics', msg: 'Reporte diario de rendimiento exportado' },
-        { type: 'API Gateway', msg: 'Conexión consolidada con pasarela de transporte' }
-      ];
-
-      setInterval(() => {
-        if (Math.random() > 0.4) {
-          const now = new Date();
-          const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-          
-          const ev = sampleEvents[Math.floor(Math.random() * sampleEvents.length)];
-          
-          const row = document.createElement('div');
-          row.className = 'flex justify-between';
-          row.innerHTML = `<span class="text-neonGreen">${ev.type}</span><span>${timeStr} ${ev.msg}</span>`;
-          
-          logContainer.insertBefore(row, logContainer.firstChild);
-          
-          if (logContainer.childNodes.length > 3) {
-            logContainer.removeChild(logContainer.lastChild);
-          }
-        }
-      }, 4000);
-    }
-
-    // -------------------------------------------------------------
-    // CONFIGURACIÓN DE ECHARTS (GRÁFICA DE VÍDEO TELEMETRÍA)
-    // -------------------------------------------------------------
-    function initVideoChart() {
-      const chartDom = document.getElementById('chart-cctv-events');
-      videoChart = echarts.init(chartDom, 'dark');
-      
-      const option = {
-        backgroundColor: 'transparent',
-        tooltip: {
-          trigger: 'axis',
-          textStyle: {
-            fontFamily: 'JetBrains Mono',
-            fontSize: 9
-          }
-        },
-        grid: {
-          left: '2%',
-          right: '5%',
-          top: '8%',
-          bottom: '5%',
-          containLabel: true
-        },
-        xAxis: {
-          type: 'category',
-          boundaryGap: false,
-          data: STATE.cctvTimestampHistory,
-          axisLine: {
-            lineStyle: {
-              color: 'rgba(51, 65, 85, 0.4)'
-            }
-          },
-          axisLabel: {
-            fontFamily: 'JetBrains Mono',
-            fontSize: 8,
-            color: '#64748b'
-          }
-        },
-        yAxis: {
-          type: 'value',
-          min: 20,
-          max: 65,
-          splitLine: {
-            lineStyle: {
-              color: 'rgba(51, 65, 85, 0.15)'
-            }
-          },
-          axisLine: {
-            lineStyle: {
-              color: 'rgba(51, 65, 85, 0.4)'
-            }
-          },
-          axisLabel: {
-            fontFamily: 'JetBrains Mono',
-            fontSize: 8,
-            color: '#64748b'
-          }
-        },
-        series: [{
-          name: 'Eventos',
-          type: 'line',
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 4,
-          data: STATE.cctvEpsHistory,
-          lineStyle: {
-            color: '#f97316',
-            width: 1.8
-          },
-          itemStyle: {
-            color: '#f97316'
-          },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(249, 115, 22, 0.25)' },
-              { offset: 1, color: 'rgba(249, 115, 22, 0.01)' }
-            ])
-          }
-        }]
-      };
-
-      videoChart.setOption(option);
-    }
-
-    // Ticking clock del sidebar
-    function initSidebarClock() {
-      const clock = document.getElementById('sb-clock');
-      if (clock) {
-        const update = () => {
-          const now = new Date();
-          clock.textContent = now.toTimeString().split(' ')[0].substring(0, 5);
-        };
-        update();
-        setInterval(update, 1000);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // AL CARGAR LA PÁGINA
-    // -------------------------------------------------------------
-    window.addEventListener('DOMContentLoaded', () => {
-      // 0. Inicializar iconos Lucide y reloj
-      lucide.createIcons();
-      initSidebarClock();
-
-      // 1. Inicializar acordiones y gráficos
-      expandAccordion(1);
-      initVideoChart();
-      
-      // 2. Sincronizar dimensiones y coordenadas del Canvas
-      syncLayoutCoordinates();
-      initOrbitGroups();
-      
-      // 3. Lanzar motor de renderizado de Canvas
-      renderLoop();
-      
-      // 4. Iniciar Tickers y variables dinámicas
-      initDataTelemetryUpdates();
-
-      window.addEventListener('resize', () => {
-        syncLayoutCoordinates();
-        if (videoChart) videoChart.resize();
-      });
+    let selectedAssetId = null;
+
+    // 2. Inicializar CesiumJS
+    // Para evitar costes y tokens de Cesium Ion, usamos CartoDB Positron como mapa base monocromático (Clay)
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      animation: false,
+      timeline: false,
+      geocoder: false,
+      homeButton: false,
+      infoBox: false,
+      selectionIndicator: false,
+      navigationHelpButton: false,
+      sceneModePicker: false,
+      baseLayerPicker: false,
+      fullscreenButton: false,
+      vrButton: false,
+      baseLayer: false
     });
 
+    // Agregar el proveedor de mapas base CartoDB Positron
+    const imageryProvider = new Cesium.UrlTemplateImageryProvider({
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: '© OpenStreetMap contributors, © CARTO'
+    });
+    viewer.imageryLayers.addImageryProvider(imageryProvider);
+
+    // Desactivar luz dinámica global para mantener estética uniforme Clay
+    viewer.scene.globe.enableLighting = false;
+    viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#eae8e4');
+
+    // Cargar los edificios desde el GeoJSON local
+    let geojsonDataSource = null;
+    Cesium.GeoJsonDataSource.load('./public/aapp_buildings.geojson', {
+      clampToGround: false
+    }).then(function(dataSource) {
+      geojsonDataSource = dataSource;
+      viewer.dataSources.add(dataSource);
+      
+      const entities = dataSource.entities.values;
+      entities.forEach(entity => {
+        const props = entity.properties;
+        const height = props.height.getValue();
+        const status = props.inspection_status.getValue();
+        
+        // Configurar extrusión 3D
+        entity.polygon.extrudedHeight = height;
+        entity.polygon.height = 0;
+        
+        // Estilizar edificios según estado patrimonial
+        let color;
+        if (status === 'expired') {
+          color = Cesium.Color.fromCssColorString('#dc2626').withAlpha(0.85); // Rojo Sólido
+        } else if (status === 'warning') {
+          color = Cesium.Color.fromCssColorString('#f59e0b').withAlpha(0.85); // Amarillo/Ámbar
+        } else {
+          color = Cesium.Color.fromCssColorString('#d1d5db').withAlpha(0.85); // Gris Claro Pulcro (Clay)
+        }
+        
+        entity.polygon.material = color;
+        entity.polygon.outline = true;
+        entity.polygon.outlineColor = Cesium.Color.fromCssColorString('#9ca3af');
+      });
+
+      // Iniciamos el vuelo de cámara orbital en la carga inicial sobre Madrid
+      startInitialOrbit();
+    }).catch(function(error) {
+      console.error("Error cargando GeoJSON:", error);
+    });
+
+    // 3. Control de Órbita de Cámara Automática
+    let isOrbiting = true;
+    let orbitAngle = 0;
+    const targetCenter = Cesium.Cartesian3.fromDegrees(-3.6935, 40.4189, 0); // Plaza de Cibeles
+
+    function updateOrbit(clock) {
+      if (isOrbiting) {
+        orbitAngle += 0.001; // Velocidad de órbita
+        viewer.camera.lookAt(
+          targetCenter,
+          new Cesium.HeadingPitchRange(
+            orbitAngle,
+            Cesium.Math.toRadians(-30),
+            600 // Distancia / Altura
+          )
+        );
+      }
+    }
+
+    // Registrar evento de órbita
+    viewer.clock.onTick.addEventListener(updateOrbit);
+
+    function startInitialOrbit() {
+      isOrbiting = true;
+      document.getElementById('btnToggleOrbit').classList.add('active');
+      document.getElementById('btnToggleOrbit').innerHTML = `
+        <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+        <span>Cámara: Órbita Activa</span>
+      `;
+      lucide.createIcons();
+    }
+
+    function toggleOrbit() {
+      isOrbiting = !isOrbiting;
+      const btn = document.getElementById('btnToggleOrbit');
+      if (isOrbiting) {
+        btn.classList.add('active');
+        btn.innerHTML = `
+          <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+          <span>Cámara: Órbita Activa</span>
+        `;
+        // Restablecer órbita desde donde está la cámara
+        viewer.camera.lookAt(targetCenter, new Cesium.HeadingPitchRange(viewer.camera.heading, Cesium.Math.toRadians(-30), 600));
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = `
+          <i data-lucide="play" style="width: 14px; height: 14px;"></i>
+          <span>Cámara: Reanudar Órbita</span>
+        `;
+        viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY); // Liberar controles de cámara del usuario
+      }
+      lucide.createIcons();
+    }
+
+    function stopOrbiting() {
+      if (isOrbiting) {
+        isOrbiting = false;
+        const btn = document.getElementById('btnToggleOrbit');
+        btn.classList.remove('active');
+        btn.innerHTML = `
+          <i data-lucide="play" style="width: 14px; height: 14px;"></i>
+          <span>Cámara: Reanudar Órbita</span>
+        `;
+        viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY); // Liberar
+        lucide.createIcons();
+      }
+    }
+
+    // Detener la órbita automáticamente si el usuario interactúa manualmente con el mapa
+    viewer.camera.moveStart.addEventListener(stopOrbiting);
+
+    function resetCameraView() {
+      stopOrbiting();
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(-3.6935, 40.4189, 500),
+        orientation: {
+          heading: Cesium.Math.toRadians(0),
+          pitch: Cesium.Math.toRadians(-35),
+          roll: 0.0
+        },
+        duration: 2.0
+      });
+    }
+
+    // 4. Inicializar ECharts (Velocímetro SLA)
+    let mySlaChart = null;
+    function initSlaGauge(slaValue) {
+      const chartDom = document.getElementById('slaGauge');
+      if (!mySlaChart) {
+        mySlaChart = echarts.init(chartDom);
+      }
+      
+      const option = {
+        series: [
+          {
+            type: 'gauge',
+            startAngle: 180,
+            endAngle: 0,
+            min: 0,
+            max: 100,
+            radius: '100%',
+            center: ['50%', '85%'],
+            axisLine: {
+              lineStyle: {
+                width: 6,
+                color: [
+                  [0.85, '#dc2626'], // Rojo (< 85%)
+                  [0.92, '#f59e0b'], // Amarillo/Naranja (85% - 92%)
+                  [1, '#16a34a']    // Verde (> 92%)
+                ]
+              }
+            },
+            pointer: {
+              icon: 'path://M12.8,0.7l12,8.5c0.5,0.4,0.7,1,0.5,1.6l-4.5,13.6c-0.2,0.6-0.8,1-1.4,1H4.5c-0.6,0-1.2-0.4-1.4-1L-1.3,10.8C-1.5,10.2-1.3,9.6-0.8,9.2l12-8.5C11.7,0.3,12.3,0.3,12.8,0.7z',
+              length: '65%',
+              width: 4,
+              offsetCenter: [0, '5%'],
+              itemStyle: {
+                color: '#475569'
+              }
+            },
+            axisTick: {
+              show: false
+            },
+            splitLine: {
+              show: false
+            },
+            axisLabel: {
+              show: false
+            },
+            title: {
+              show: false
+            },
+            detail: {
+              valueAnimation: true,
+              offsetCenter: [0, '-10%'],
+              fontSize: 16,
+              fontWeight: '800',
+              color: '#1a202c',
+              formatter: '{value}%'
+            },
+            data: [{ value: slaValue }]
+          }
+        ]
+      };
+      
+      mySlaChart.setOption(option);
+    }
+
+    // Inicializar con el SLA global (92%)
+    initSlaGauge(92);
+
+    // Ajustar el tamaño del gráfico de ECharts si se cambia el tamaño de la ventana
+    window.addEventListener('resize', function() {
+      if (mySlaChart) mySlaChart.resize();
+    });
+
+    // 5. Integración de Cytoscape.js (Grafo de dependencias ocultas)
+    let cyInstance = null;
+    let pulseInterval = null;
+
+    function renderCytoscape(buildingName, status, subcontractor) {
+      if (pulseInterval) {
+        clearInterval(pulseInterval);
+        pulseInterval = null;
+      }
+
+      const hasAlert = (status === 'expired' || status === 'warning');
+
+      cyInstance = cytoscape({
+        container: document.getElementById('cyContainer'),
+        userZoomingEnabled: false,
+        userPanningEnabled: false,
+        boxSelectionEnabled: false,
+        autoungrabify: true,
+        elements: [
+          // Nodos
+          { data: { id: 'building', label: buildingName } },
+          { data: { id: 'contracts', label: 'Contrato\n' + subcontractor } },
+          { data: { id: 'insurance', label: 'Póliza RC\nGenerali S.A.' } },
+          { data: { id: 'infra', label: 'Suministros\n(Luz/Agua/Clima)' } }
+        ],
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'shape': 'round-rectangle',
+              'background-color': '#ffffff',
+              'border-color': '#e2e8f0',
+              'border-width': 1.5,
+              'padding': '12px',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'text-wrap': 'wrap',
+              'font-family': 'Inter, sans-serif',
+              'font-size': '8.5px',
+              'font-weight': '500',
+              'color': '#475569',
+              'width': '95px',
+              'height': '38px',
+            }
+          },
+          {
+            selector: 'node[id="building"]',
+            style: {
+              'background-color': '#f8fafc',
+              'border-color': '#4f46e5',
+              'border-width': 2.5,
+              'width': '110px',
+              'height': '42px',
+              'font-size': '9.5px',
+              'font-weight': '700',
+              'color': '#1e1b4b'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 2,
+              'line-color': '#cbd5e1',
+              'target-arrow-color': '#cbd5e1',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier'
+            }
+          }
+        ],
+        layout: {
+          name: 'preset'
+        }
+      });
+
+      // Configurar coordenadas manuales de los nodos para un diseño limpio
+      // Suministros (izquierda), Seguro (centro), Contrato (derecha) en la fila superior; Edificio abajo.
+      cyInstance.nodes('node[id="contracts"]').position({ x: 50, y: 50 });
+      cyInstance.nodes('node[id="insurance"]').position({ x: 155, y: 50 });
+      cyInstance.nodes('node[id="infra"]').position({ x: 260, y: 50 });
+      cyInstance.nodes('node[id="building"]').position({ x: 155, y: 160 });
+
+      // Añadir líneas de conexión orientadas hacia el edificio central
+      cyInstance.add([
+        { data: { id: 'e-contracts', source: 'contracts', target: 'building' } },
+        { data: { id: 'e-insurance', source: 'insurance', target: 'building' } },
+        { data: { id: 'e-infra', source: 'infra', target: 'building' } }
+      ]);
+
+      // WOW Effect: Si está en riesgo/alerta, colorear y hacer parpadear/pulsar los edges
+      if (hasAlert) {
+        // Colorear de rojo inmediato
+        cyInstance.edges().style({
+          'line-color': '#dc2626',
+          'target-arrow-color': '#dc2626'
+        });
+
+        // Loop de pulsos
+        let isPulse = false;
+        pulseInterval = setInterval(() => {
+          if (!cyInstance) return;
+          isPulse = !isPulse;
+          cyInstance.edges().style({
+            'width': isPulse ? 4.5 : 2,
+            'line-color': isPulse ? '#fee2e2' : '#dc2626',
+            'target-arrow-color': isPulse ? '#fee2e2' : '#dc2626'
+          });
+        }, 450);
+      }
+    }
+
+    // 6. Flujo de Sincronización y Actualización de Ficha de Activo
+    function selectAsset(assetId, fromMapClick = false) {
+      selectedAssetId = assetId;
+      const asset = assetsDatabase[assetId];
+      if (!asset) return;
+
+      // Ocultar estado vacío, mostrar contenedor de ficha
+      document.getElementById('fichaEmptyState').style.display = 'none';
+      const fichaContent = document.getElementById('fichaContent');
+      fichaContent.classList.add('active');
+
+      // Actualizar datos de texto
+      document.getElementById('assetName').innerText = asset.name;
+      document.getElementById('assetType').innerText = asset.type;
+      document.getElementById('assetCode').innerText = asset.code;
+      document.getElementById('assetYear').innerText = asset.year;
+      document.getElementById('assetValue').innerText = asset.value;
+      document.getElementById('assetSubcontractor').innerText = asset.subcontractor;
+      document.getElementById('assetAvgResolution').innerText = asset.avg_resolution;
+      
+      // Actualizar desviación de presupuesto
+      const devEl = document.getElementById('assetDeviation');
+      devEl.innerText = asset.deviation;
+      if (asset.status === 'valid') {
+        devEl.style.color = '#16a34a';
+      } else if (asset.status === 'warning') {
+        devEl.style.color = '#d97706';
+      } else {
+        devEl.style.color = '#dc2626';
+      }
+
+      // Actualizar estado de inspección (Badge)
+      const badge = document.getElementById('assetStatusBadge');
+      badge.className = 'badge'; // limpiar
+      if (asset.status === 'expired') {
+        badge.classList.add('badge-danger');
+        badge.innerText = 'Inspección Vencida';
+      } else if (asset.status === 'warning') {
+        badge.classList.add('badge-warning');
+        badge.innerText = 'Próximo Vencimiento';
+      } else {
+        badge.classList.add('badge-success');
+        badge.innerText = 'Cumplimiento Al Día';
+      }
+
+      // Actualizar banner de alerta
+      const alertBanner = document.getElementById('assetAlertBanner');
+      alertBanner.className = 'ficha-alert-banner'; // limpiar
+      alertBanner.classList.add(asset.status);
+      document.getElementById('assetAlertText').innerText = asset.alertText;
+
+      // Actualizar ECharts SLA de este edificio
+      initSlaGauge(asset.sla);
+      document.getElementById('gaugeSlaText').innerText = asset.sla + '% Activo';
+
+      // Renderizar Grafo Cytoscape de dependencias
+      renderCytoscape(asset.name, asset.status, asset.subcontractor);
+
+      // Mostrar botón "Limpiar Selección"
+      document.getElementById('btnClearSelection').style.display = 'flex';
+
+      // Si el evento fue desde el buscador, movemos la cámara también
+      if (!fromMapClick) {
+        // Detener órbita al hacer clic en controles o buscador
+        stopOrbiting();
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(asset.lng, asset.lat, 250),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-40),
+            roll: 0.0
+          },
+          duration: 1.5
+        });
+      }
+    }
+
+    function deselectAsset() {
+      selectedAssetId = null;
+      
+      // Ocultar ficha, mostrar estado vacío
+      document.getElementById('fichaContent').classList.remove('active');
+      document.getElementById('fichaEmptyState').style.display = 'flex';
+
+      // Restablecer indicador global
+      initSlaGauge(92);
+      document.getElementById('gaugeSlaText').innerText = '92% Global';
+
+      // Limpiar grafo
+      if (cyInstance) {
+        cyInstance.destroy();
+        cyInstance = null;
+      }
+      if (pulseInterval) {
+        clearInterval(pulseInterval);
+        pulseInterval = null;
+      }
+
+      // Ocultar botón "Limpiar Selección"
+      document.getElementById('btnClearSelection').style.display = 'none';
+    }
+
+    // Interacción desde el mapa: Detectar clics en edificios 3D
+    const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    clickHandler.setInputAction(function(click) {
+      const pickedObject = viewer.scene.pick(click.position);
+      if (Cesium.defined(pickedObject) && pickedObject.id) {
+        const entity = pickedObject.id;
+        if (entity.properties && entity.properties.id) {
+          const id = entity.properties.id.getValue();
+          stopOrbiting();
+          selectAsset(id, true);
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // 7. Interacción desde la Columna Izquierda (Bucle de FlyTo + Blink)
+    function flyToAndBlink(buildingId) {
+      stopOrbiting();
+      const asset = assetsDatabase[buildingId];
+      if (!asset) return;
+
+      // Volar y orientar cámara hacia el edificio en CesiumJS
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(asset.lng, asset.lat, 220),
+        orientation: {
+          heading: Cesium.Math.toRadians(15),
+          pitch: Cesium.Math.toRadians(-35),
+          roll: 0.0
+        },
+        duration: 1.8,
+        complete: function() {
+          // Seleccionar edificio en la columna izquierda
+          selectAsset(buildingId, true);
+          // Hacer parpadear el edificio 3D en el mapa para validación visual
+          blinkBuildingInMap(buildingId);
+        }
+      });
+    }
+
+    function blinkBuildingInMap(buildingId) {
+      if (!geojsonDataSource) return;
+      const entity = geojsonDataSource.entities.getById(buildingId);
+      if (!entity) return;
+
+      const originalMaterial = entity.polygon.material;
+      const blinkColor = Cesium.Color.WHITE.withAlpha(0.9);
+      
+      let blinkCount = 0;
+      const interval = setInterval(() => {
+        entity.polygon.material = (blinkCount % 2 === 0) ? blinkColor : originalMaterial;
+        blinkCount++;
+        if (blinkCount >= 6) {
+          clearInterval(interval);
+          entity.polygon.material = originalMaterial; // restaurar
+        }
+      }, 250);
+    }
+
+    // 8. Buscador Predictivo de Activos
+    const searchInput = document.getElementById('assetSearch');
+    const searchResults = document.getElementById('searchResults');
+
+    searchInput.addEventListener('input', function() {
+      const query = searchInput.value.toLowerCase().trim();
+      if (!query) {
+        searchResults.classList.remove('active');
+        return;
+      }
+
+      const matches = Object.values(assetsDatabase).filter(asset => 
+        asset.name.toLowerCase().includes(query) || 
+        asset.code.toLowerCase().includes(query) ||
+        asset.subcontractor.toLowerCase().includes(query) ||
+        asset.status.toLowerCase().includes(query)
+      );
+
+      if (matches.length === 0) {
+        searchResults.innerHTML = '<div class="search-result-item" style="cursor: default; color: #94a3b8;">No se encontraron resultados</div>';
+      } else {
+        searchResults.innerHTML = matches.map(asset => {
+          let statusLabel = 'Al día';
+          let colorStyle = '#16a34a';
+          if (asset.status === 'expired') { statusLabel = 'Vencido'; colorStyle = '#dc2626'; }
+          else if (asset.status === 'warning') { statusLabel = 'Alerta'; colorStyle = '#f59e0b'; }
+
+          return `
+            <div class="search-result-item" onclick="selectFromSearch('${asset.id}')">
+              <span><strong>${asset.name}</strong> <small style="color: #64748b;">(${asset.code})</small></span>
+              <span style="color: ${colorStyle}; font-weight: 600; font-size: 0.75rem;">${statusLabel}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      searchResults.classList.add('active');
+    });
+
+    // Cerrar buscador si se hace clic fuera
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.remove('active');
+      }
+    });
+
+    function selectFromSearch(assetId) {
+      searchInput.value = '';
+      searchResults.classList.remove('active');
+      selectAsset(assetId, false);
+    }
+
+    // 9. Funcionalidad de Seattle OSM y Estilos de 3D Tiles
+    let currentMapMode = 'madrid';
+    let osmBuildingsTileset = null;
+    let seattleClickHandler = null;
+
+    async function switchMapMode(mode) {
+      if (currentMapMode === mode) return;
+      currentMapMode = mode;
+
+      const btnMadrid = document.getElementById('btnModeMadrid');
+      const btnSeattle = document.getElementById('btnModeSeattle');
+      const madridControls = document.getElementById('madridControls');
+      const seattleControls = document.getElementById('seattleControls');
+      const legendOverlay = document.querySelector('.map-legend-overlay');
+
+      if (mode === 'madrid') {
+        btnMadrid.classList.add('active');
+        btnSeattle.classList.remove('active');
+        madridControls.style.display = 'flex';
+        seattleControls.style.display = 'none';
+        legendOverlay.style.display = 'flex';
+        
+        // Ocultar OSM Tileset
+        if (osmBuildingsTileset) osmBuildingsTileset.show = false;
+        
+        // Mostrar Madrid GeoJSON
+        if (geojsonDataSource) geojsonDataSource.show = true;
+        
+        // Eliminar manejador de clics de Seattle
+        if (seattleClickHandler) {
+          seattleClickHandler.destroy();
+          seattleClickHandler = null;
+        }
+
+        // Restablecer vista y órbita
+        deselectAsset();
+        startInitialOrbit();
+      } else {
+        btnMadrid.classList.remove('active');
+        btnSeattle.classList.add('active');
+        madridControls.style.display = 'none';
+        seattleControls.style.display = 'flex';
+        legendOverlay.style.display = 'none';
+        
+        stopOrbiting();
+        
+        // Ocultar Madrid GeoJSON
+        if (geojsonDataSource) geojsonDataSource.show = false;
+        deselectAsset();
+        
+        // Cargar OSM Buildings si no está cargado
+        if (!osmBuildingsTileset) {
+          try {
+            osmBuildingsTileset = await Cesium.createOsmBuildingsAsync();
+            viewer.scene.primitives.add(osmBuildingsTileset);
+          } catch (e) {
+            console.error("Error al cargar OSM Buildings:", e);
+            alert("No se pudo cargar el set de OSM Buildings de Cesium. Para uso ilimitado se requiere configurar un token de Cesium Ion. Volviendo a modo Madrid.");
+            switchMapMode('madrid');
+            return;
+          }
+        }
+        osmBuildingsTileset.show = true;
+
+        // Volar la cámara hacia Seattle
+        viewer.scene.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(-122.3472, 47.598, 370),
+          orientation: {
+            heading: Cesium.Math.toRadians(10),
+            pitch: Cesium.Math.toRadians(-10),
+            roll: 0.0
+          },
+          duration: 2.0,
+          complete: function() {
+            applySeattleStyle();
+          }
+        });
+      }
+    }
+
+    function applySeattleStyle() {
+      if (!osmBuildingsTileset) return;
+      
+      const val = document.getElementById('seattleStyleDropdown').value;
+      const infoPanel = document.getElementById('seattleInfoPanel');
+      
+      if (seattleClickHandler) {
+        seattleClickHandler.destroy();
+        seattleClickHandler = null;
+      }
+      infoPanel.style.display = 'none';
+
+      switch (val) {
+        case 'material':
+          osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+            defines: {
+              material: "${feature['building:material']}",
+            },
+            color: {
+              conditions: [
+                ["${material} === null", "color('white')"],
+                ["${material} === 'glass'", "color('skyblue', 0.5)"],
+                ["${material} === 'concrete'", "color('grey')"],
+                ["${material} === 'brick'", "color('indianred')"],
+                ["${material} === 'stone'", "color('lightslategrey')"],
+                ["${material} === 'metal'", "color('lightgrey')"],
+                ["${material} === 'steel'", "color('lightsteelblue')"],
+                ["true", "color('white')"],
+              ],
+            },
+          });
+          break;
+          
+        case 'distance':
+          colorByDistanceToCoordinate(47.62051, -122.34931);
+          infoPanel.style.display = 'flex';
+          
+          seattleClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+          seattleClickHandler.setInputAction(function (movement) {
+            const pickedBuilding = viewer.scene.pick(movement.position);
+            if (Cesium.defined(pickedBuilding) && typeof pickedBuilding.getProperty === 'function') {
+              const pickedLatitude = pickedBuilding.getProperty("cesium#latitude");
+              const pickedLongitude = pickedBuilding.getProperty("cesium#longitude");
+              if (Cesium.defined(pickedLatitude) && Cesium.defined(pickedLongitude)) {
+                colorByDistanceToCoordinate(pickedLatitude, pickedLongitude);
+              }
+            }
+          }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+          break;
+          
+        case 'residential':
+          osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+            color: {
+              conditions: [
+                [
+                  "${feature['building']} === 'apartments' || ${feature['building']} === 'residential'",
+                  "color('cyan', 0.9)",
+                ],
+                [true, "color('white')"],
+              ],
+            },
+          });
+          break;
+          
+        case 'office':
+          osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+            show: "${feature['building']} === 'office'",
+          });
+          break;
+          
+        case 'apartments':
+          osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+            show: "${feature['building']} === 'apartments'",
+          });
+          break;
+      }
+      lucide.createIcons();
+    }
+
+    function colorByDistanceToCoordinate(pickedLatitude, pickedLongitude) {
+      if (!osmBuildingsTileset) return;
+      osmBuildingsTileset.style = new Cesium.Cesium3DTileStyle({
+        defines: {
+          distance: `distance(vec2(\${feature['cesium#longitude']}, \${feature['cesium#latitude']}), vec2(${pickedLongitude},${pickedLatitude}))`,
+        },
+        color: {
+          conditions: [
+            ["${distance} > 0.014", "color('blue')"],
+            ["${distance} > 0.010", "color('green')"],
+            ["${distance} > 0.006", "color('yellow')"],
+            ["${distance} > 0.0001", "color('red')"],
+            ["true", "color('white')"],
+          ],
+        },
+      });
+    }
+
+    // Escuchar el cambio en el selector de estilos de Seattle
+    document.getElementById('seattleStyleDropdown').addEventListener('change', applySeattleStyle);
   </script>
 </body>
 </html>
